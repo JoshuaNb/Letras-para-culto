@@ -15,7 +15,7 @@ internal static class Program
         catch (Exception ex) { Services.AppLog.Write(ex.ToString()); if (OperatingSystem.IsWindows()) MessageBox(IntPtr.Zero, ex.Message, "Worship Studio — falha ao iniciar", 0x10); }
     }
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont()
-        .With(new Win32PlatformOptions { RenderingMode = [Win32RenderingMode.AngleEgl, Win32RenderingMode.Software] }).LogToTrace();
+        .With(new Win32PlatformOptions { RenderingMode = Services.WindowsCompatibility.RenderingModes }).LogToTrace();
     [DllImport("user32.dll", CharSet=CharSet.Unicode)]
     private static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
 }

@@ -23,6 +23,12 @@ if(Test-Path -LiteralPath $taskAndroid){
     }
 }
 & (Join-Path $taskReleaseRoot 'build.ps1') -DotnetPath $DotnetPath -InnoCompiler $InnoCompiler
+# Both runtime payloads belong to the same updater-compatible installer.
+foreach($taskPayload in @('app/win-x64','app/win-legacy-x64')){
+    foreach($taskPayloadFile in @('WorshipStudio.exe','WorshipStudio.runtimeconfig.json','coreclr.dll','tools/ffmpeg/ffmpeg.exe')){
+        if(-not(Test-Path -LiteralPath (Join-Path $taskReleaseRoot "$taskPayload/$taskPayloadFile"))){throw "Payload incompleto: $taskPayload/$taskPayloadFile"}
+    }
+}
 & (Join-Path $taskReleaseRoot 'package-source.ps1')
 $taskManifest=Join-Path $taskOutput "SHA256SUMS-v$taskVersion.txt"
 $taskNames=@("WorshipStudio-Setup-$taskVersion.exe","WorshipStudio-Codigo-Fonte-$taskVersion.zip")

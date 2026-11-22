@@ -1,10 +1,10 @@
-# Worship Studio 1.4.0
+# Worship Studio 1.5.0
 
-Aplicativo desktop em C#/.NET 10 e Avalonia UI para preparar e projetar letras de louvores. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
+Aplicativo desktop em C#/Avalonia UI para preparar e projetar letras de louvores. Edição atual .NET 10 e edição legado .NET 6 para Windows 7 SP1, 8, 8.1, 10 e 11 x64. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
 
 ## Instalação e primeira projeção
 
-1. Execute `WorshipStudio-Setup-1.4.0.exe` no Windows 11 x64. A instalação é por usuário, sem exigir administrador. .NET, LibVLC e FFmpeg necessários já acompanham o pacote. A atualização preserva a biblioteca existente.
+1. Execute `WorshipStudio-Setup-1.5.0.exe` no Windows x64. O instalador escolhe a edição adequada e inclui .NET, LibVLC e FFmpeg. A instalação é por usuário e preserva a biblioteca. No Windows 7, instale o SP1 e a KB3063858 ou atualização equivalente antes de instalar o programa.
 2. Para dois monitores, escolha **Estender estes vídeos** nas configurações de vídeo do Windows. Ligue o projetor antes de iniciar.
 3. Abra Worship Studio. Na aba **Cena**, escolha o monitor de saída.
 4. Clique **Abrir projeção**. A janela de operação permanece independente da projeção. A janela de saída pode funcionar no mesmo monitor quando não há segunda tela.
@@ -13,7 +13,13 @@ Aplicativo desktop em C#/.NET 10 e Avalonia UI para preparar e projetar letras d
 
 O louvor inicial é um texto original curto para conferir a operação. Importe ou cadastre a biblioteca da igreja.
 
-## Novidades da versão 1.4
+## Novidades da versão 1.5
+
+- **Windows antigos:** edição legado incluída para Windows 7 SP1, 8, 8.1 e versões anteriores do Windows 10. Letras, animações, Holyrics, controle remoto e MP4 continuam disponíveis. A edição legado renderiza por software; Windows 10 22H2/11 mantém GPU com fallback.
+- **Instalador universal:** seleciona o runtime por versão do Windows e preserva biblioteca e preferências. Não precisa baixar o runtime durante a instalação.
+- **Validação:** os dois runtimes são testados no computador de desenvolvimento. A execução em máquinas Windows 7/8/10 permanece pendente; não foi comprovada nesta sessão. [Requisitos e limites](https://github.com/JoshuaNb/Letras-para-culto/blob/main/docs/COMPATIBILIDADE-WINDOWS.md).
+
+## Recursos da versão anterior
 
 - **Android:** em Conexões, inicie o controle remoto. No APK Letras para culto — Controle, informe o endereço do PC e o código de seis dígitos mostrado na tela. O código dura dez minutos; desligar o controle revoga o acesso. Os aparelhos devem estar na mesma rede local.
 - **APK incluído:** Baixar APK para Android permite salvar uma cópia do aplicativo para transferir ao celular, sem internet. O APK também está disponível na Release do GitHub.

@@ -2,3 +2,4 @@ dc3ae92ca2514a0c26dbc2dc5aa28ed1cc39b3d0645ac9c828035f4cb3e96eb7  ffmpeg-660b5aa
 e9bb8c9b0e0b5927bca3dd7817a959daaee24eef486eb857b2b8cbae3959568f  ffmpeg-build-recipes.tar.gz
 b9e12cbca8038fc78b468f53da80c0fb24f01963cb3c7205a23abbc7f832b79f  libvlcsharp-3.10.2.tar.gz
 e7cab503d1d7d5849b89d2cf0e1ee60d0ef6d012407791b644b9cfc0cc225fdf  vlc-3.0.24.tar.xz
+02dd159783677a749c04adbdd02b55b8a2bcc7e054f51b76b549199a916ad584  zlib-1.4.tar.gz

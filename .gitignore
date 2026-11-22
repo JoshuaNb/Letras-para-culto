@@ -20,3 +20,5 @@ test-evidence/
 *.jks
 *.p12
 *.keystore
+**/__pycache__/
+*.pyc

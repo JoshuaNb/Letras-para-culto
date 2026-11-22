@@ -1,4 +1,4 @@
-# Controle Android — Letras para culto 1.4.0
+# Controle Android — Letras para culto 1.5.0
 
 Aplicativo nativo Android para operar o Worship Studio na mesma rede local. Gratuito, sem conta, anúncios, nuvem, serviços Google ou dependências externas. Requer Android 8.0 ou superior. A interface é em português brasileiro.
 
@@ -24,7 +24,7 @@ Requer JDK 21, Android SDK Platform 36 e Build Tools 36.0.0. Não precisa de Gra
 .\build.ps1 -AndroidSdkRoot C:\ferramentas\android-sdk -JdkRoot C:\ferramentas\jdk-21 -KeyStorePath C:\assinatura-privada\letras-controle.jks
 ```
 
-As senhas devem estar nas variáveis `WORSHIP_ANDROID_STORE_PASSWORD` e `WORSHIP_ANDROID_KEY_PASSWORD`. O alias padrão é `worshipstudio-remote`. O script monta o APK com `javac`, `aapt2`, `d8`, `zipalign` e `apksigner`, verifica assinatura e alinhamento e mostra o SHA-256. O APK final fica ao lado dos instaladores de PC, com nome `LetrasParaCulto-Controle-1.4.0.apk`.
+As senhas devem estar nas variáveis `WORSHIP_ANDROID_STORE_PASSWORD` e `WORSHIP_ANDROID_KEY_PASSWORD`. O alias padrão é `worshipstudio-remote`. O script monta o APK com `javac`, `aapt2`, `d8`, `zipalign` e `apksigner`, verifica assinatura e alinhamento e mostra o SHA-256. O APK final fica ao lado dos instaladores de PC, com nome `LetrasParaCulto-Controle-1.5.0.apk`.
 
 Mantenha o keystore e as senhas fora do repositório e do ZIP público; faça backup privado. As próximas versões Android devem usar a mesma chave para permitir atualização sobre a instalação anterior. Não publique um APK assinado com chave de debug como distribuição definitiva.
 

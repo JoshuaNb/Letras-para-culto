@@ -1,0 +1,27 @@
+using Avalonia;
+
+namespace WorshipStudio.Services;
+
+/// <summary>Rendering paths available in the legacy Windows payload.</summary>
+public static class WindowsCompatibility
+{
+    public static bool IsLegacyRuntime
+    {
+        get
+        {
+#if NET6_0
+            return true;
+#else
+            return false;
+#endif
+        }
+    }
+
+    public static bool UseSoftwareRendering(Version windowsVersion, bool legacyRuntime) =>
+        legacyRuntime || windowsVersion.Major < 10;
+
+    public static Win32RenderingMode[] RenderingModes =>
+        UseSoftwareRendering(Environment.OSVersion.Version, IsLegacyRuntime)
+            ? [Win32RenderingMode.Software]
+            : [Win32RenderingMode.AngleEgl, Win32RenderingMode.Software];
+}

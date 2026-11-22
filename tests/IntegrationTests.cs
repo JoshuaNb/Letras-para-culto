@@ -96,7 +96,7 @@ public sealed class IntegrationTests : IDisposable
     [Fact]
     public async Task HolyricsImportUsesOfficialPostApiAndFetchesMissingLyrics()
     {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        using var listener = new DisposableTcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         var served = Task.Run(async () =>
@@ -127,7 +127,7 @@ public sealed class IntegrationTests : IDisposable
 
     private static int FreePort()
     {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        using var listener = new DisposableTcpListener(IPAddress.Loopback, 0);
         listener.Start();
         return ((IPEndPoint)listener.LocalEndpoint).Port;
     }

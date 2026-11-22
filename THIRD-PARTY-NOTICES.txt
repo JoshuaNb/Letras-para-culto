@@ -1,4 +1,4 @@
-Worship Studio 1.1.0 - componentes de terceiros
+Worship Studio 1.5.0 - componentes de terceiros
 
 O código do Worship Studio é disponibilizado sob a licença MIT (LICENSE.txt).
 As dependências mantêm suas próprias licenças. O uso não requer assinatura,
@@ -16,8 +16,13 @@ NAudio 2.2.1 - MIT
 LibVLCSharp e LibVLCSharp.Avalonia 3.10.2 - LGPL 2.1 ou posterior
 VideoLAN.LibVLC.Windows 3.0.24 - LGPL 2.1 ou posterior
 FFmpeg n8.1.3-39-g660b5aa7db-20261122 LGPL shared - LGPL 3.0 ou posterior
-.NET 10 runtime - MIT e avisos da distribuição Microsoft
+FFmpeg 8.1.3-worshipstudio-win7, compilação legada - LGPL 2.1 ou posterior
+Zlib 1.4 e runtime MinGW-w64 da compilação legada - avisos próprios incluídos
+.NET 10 e .NET 6.0.36 runtimes - MIT e avisos da distribuição Microsoft
+Microsoft.Bcl.TimeProvider 8.0.1, para net6.0 - MIT e avisos Microsoft incluídos
 
-LibVLC e FFmpeg são distribuídos sem modificações. As bibliotecas nativas
+LibVLC e o FFmpeg moderno são distribuídos sem modificações. O FFmpeg legado
+foi compilado a partir das fontes não modificadas, com configuração própria
+e sem assembly ou bibliotecas externas opcionais. As bibliotecas nativas
 continuam substituíveis em suas pastas; o aplicativo não contém bloqueio de
 substituição. O FFmpeg é executado como processo externo.

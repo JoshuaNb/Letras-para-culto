@@ -146,7 +146,7 @@ public sealed class VideoExportService
         {
             process.Start();
             using var cancel = timeout.Token.Register(() => Kill(process));
-            var error = process.StandardError.ReadToEndAsync(timeout.Token);
+            var error = process.StandardError.ReadToEndAsync().WaitAsync(timeout.Token);
             await process.WaitForExitAsync(timeout.Token);
             await error;
             return process.ExitCode == 0;

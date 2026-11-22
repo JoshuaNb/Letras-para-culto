@@ -101,6 +101,7 @@ public sealed class UpdateWindow : Window
     private static async Task<string> FileHash(string path,CancellationToken token)
     {
         await using var stream=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.Read,128*1024,true);
-        return Convert.ToHexString(await SHA256.HashDataAsync(stream,token));
+        using var hasher=SHA256.Create();
+        return Convert.ToHexString(await hasher.ComputeHashAsync(stream,token));
     }
 }

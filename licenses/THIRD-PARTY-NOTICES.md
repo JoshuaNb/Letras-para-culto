@@ -1,6 +1,6 @@
 # Componentes de terceiros
 
-O código original do Worship Studio está sob MIT. As bibliotecas abaixo não são cobertas por essa licença do aplicativo. Os textos de licença são fornecidos nesta pasta. As versões correspondem ao pacote 1.0.0.
+O código original do Worship Studio está sob MIT. As bibliotecas abaixo não são cobertas por essa licença do aplicativo. Os textos de licença são fornecidos nesta pasta. As versões correspondem ao pacote 1.5.0; o instalador seleciona o conjunto moderno ou legado conforme o Windows.
 
 | Componente | Versão | Licença / origem |
 | --- | --- | --- |
@@ -13,12 +13,17 @@ O código original do Worship Studio está sob MIT. As bibliotecas abaixo não s
 | LibVLCSharp, LibVLCSharp.Avalonia | 3.10.2 | LGPL 2.1 ou posterior — https://code.videolan.org/videolan/LibVLCSharp |
 | VideoLAN.LibVLC.Windows | 3.0.24 | LGPL 2.1 ou posterior — https://www.videolan.org/vlc/libvlc.html |
 | FFmpeg | n8.1.3-39-g660b5aa7db-20261122 | LGPL 3.0 ou posterior — FFmpeg-LGPL-3.0.txt |
+| FFmpeg da edição legada | 8.1.3-worshipstudio-win7 | LGPL 2.1 ou posterior — FFmpeg-legacy-LGPL-2.1.txt; receita própria em tools/ffmpeg-legacy/build.sh |
+| Zlib da edição legada | 1.4 | Licença zlib — FFmpeg-legacy-zlib-LICENSE.txt — https://github.com/madler/zlib/releases/tag/v1.4 |
+| Runtime MinGW-w64 da edição legada | Incluído estaticamente pelo w64devkit 2.11.0 | Avisos BSD e outros — FFmpeg-legacy-MinGW-runtime.txt — https://github.com/skeeto/w64devkit/releases/tag/v2.11.0 |
 | MicroCom.Runtime | 0.11.0 | MIT — https://github.com/kekekeks/MicroCom |
-| .NET runtime | Versão incluída na publicação self-contained | MIT e avisos Microsoft incluídos na publicação — https://github.com/dotnet/runtime |
+| .NET runtime moderno | 10.0, patch incluído na publicação self-contained | MIT e avisos Microsoft — Dotnet-10-LICENSE.txt e Dotnet-10-THIRD-PARTY-NOTICES.txt — https://github.com/dotnet/runtime |
+| .NET runtime legado | 6.0.36, incluído na publicação self-contained | MIT e avisos Microsoft — Dotnet-6-LICENSE.txt e Dotnet-6-THIRD-PARTY-NOTICES.txt — https://github.com/dotnet/runtime/tree/v6.0.36 |
+| Microsoft.Bcl.TimeProvider, alvo net6.0 | 8.0.1 | MIT e avisos Microsoft — Microsoft.Bcl.TimeProvider-LICENSE.txt e Microsoft.Bcl.TimeProvider-THIRD-PARTY-NOTICES.txt — https://www.nuget.org/packages/Microsoft.Bcl.TimeProvider/8.0.1 |
 
 Os pacotes restaurados incluem também backends para outros sistemas que não são usados no Windows. xUnit e Microsoft.NET.Test.Sdk são dependências de desenvolvimento e não são necessários para executar o aplicativo.
 
-## FFmpeg
+## FFmpeg moderno
 
 Build Windows x64 LGPL shared do projeto indicado pela página oficial https://ffmpeg.org/download.html:
 
@@ -31,6 +36,18 @@ Build Windows x64 LGPL shared do projeto indicado pela página oficial https://f
 - Receitas de build e referências das dependências: `third-party-sources/ffmpeg-build-recipes.tar.gz`, commit `7f2a6b1050d302144de8366afa37a75e46f326aa`, https://github.com/FFmpeg-Builds/FFmpeg-Builds . O arquivo de configuração preserva as opções do binário original.
 
 FFmpeg é software livre e pode ser estudado, modificado e substituído segundo a LGPL. O Worship Studio o chama por linha de comando e não incorpora seu código no executável gerenciado.
+
+## FFmpeg legado
+
+O pacote para Windows legado utiliza uma compilação própria reduzida, em `tools/ffmpeg-legacy` no código-fonte. No aplicativo instalado, os executáveis correspondentes ficam em `tools/ffmpeg`. São executados como processos externos e podem ser recompilados e substituídos.
+
+- FFmpeg: mesmas fontes não modificadas do commit `660b5aa7dbce1f95cb04b3c7b8e94d79f893d15d`, no TAR FFmpeg já indicado acima.
+- Zlib 1.4: fonte não modificado em `third-party-sources/zlib-1.4.tar.gz`, obtido da Release oficial de `madler/zlib`; SHA256 `02dd159783677a749c04adbdd02b55b8a2bcc7e054f51b76b549199a916ad584`.
+- Receita completa: `tools/ffmpeg-legacy/build.sh`, com as instruções de reprodução em seu README. Usa o compilador MSVCRT w64devkit 2.11.0 / GCC 16.2.0, alvo Win32 x64, `_WIN32_WINNT=0x0601`, subsistema PE 6.1 e Win32 threads. Assembly, rede e bibliotecas externas opcionais estão desativados; GPL e componentes não livres não são habilitados.
+- A compilação inclui zlib estaticamente para PNG. As partes estáticas do runtime MinGW têm avisos redistribuídos em `FFmpeg-legacy-MinGW-runtime.txt`; a exceção de biblioteca de runtime GCC aplica-se ao código do compilador usado.
+- MPEG4 e AAC são os codificadores da exportação legada; AMF não é incluído nesse binário. A compilação reduzida não contém todos os codecs do pacote moderno. A licença é LGPL 2.1 ou posterior, integral em `FFmpeg-legacy-LGPL-2.1.txt`.
+
+As fontes FFmpeg e zlib, a configuração e os avisos acompanham o mesmo pacote de código para permitir reconstrução independente. Os binários novos foram produzidos dessas fontes, e não modificam a distribuição moderna preservada.
 
 ## VideoLAN
 

@@ -34,7 +34,11 @@ if(Test-Path -LiteralPath $taskBin){
     Remove-Item -LiteralPath $taskResolved -Recurse -Force
 }
 New-Item -ItemType Directory -Path $taskClasses,$taskDex -Force | Out-Null
-if(-not $OutputPath){$OutputPath=Join-Path (Split-Path (Split-Path $taskRoot -Parent) -Parent) 'LetrasParaCulto-Controle-1.4.0.apk'}
+if(-not $OutputPath){
+    $taskManifest=[xml](Get-Content -LiteralPath (Join-Path $taskRoot 'AndroidManifest.xml') -Raw)
+    $taskVersion=$taskManifest.manifest.GetAttribute('versionName','http://schemas.android.com/apk/res/android')
+    $OutputPath=Join-Path (Split-Path (Split-Path $taskRoot -Parent) -Parent) "LetrasParaCulto-Controle-$taskVersion.apk"
+}
 $taskOutput=[IO.Path]::GetFullPath($OutputPath)
 New-Item -ItemType Directory -Path (Split-Path $taskOutput -Parent) -Force | Out-Null
 $taskPreviousJava=$env:JAVA_HOME

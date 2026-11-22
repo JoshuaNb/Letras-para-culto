@@ -1,5 +1,6 @@
 using System.Text.Json;
 using WorshipStudio.Services;
+using WorshipStudio.Tests;
 using Xunit;
 using System.Net;
 using System.Net.Sockets;
@@ -9,7 +10,7 @@ public sealed class HolyricsMappingTests
 {
     [Fact] public async Task UnchangedSourceSlidesDoNotRetriggerFollowerTransitions()
     {
-        using var listener=new TcpListener(IPAddress.Loopback,0);listener.Start();
+        using var listener=new DisposableTcpListener(IPAddress.Loopback,0);listener.Start();
         var port=((IPEndPoint)listener.LocalEndpoint).Port;
         using var cts=new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var server=Task.Run(async()=>

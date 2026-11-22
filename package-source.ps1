@@ -15,7 +15,7 @@ try {
     try {
         foreach ($taskFile in Get-ChildItem -LiteralPath $taskRoot -File -Recurse) {
             $taskRelative = [IO.Path]::GetRelativePath($taskRoot,$taskFile.FullName)
-            if ($taskRelative -match '^(app|\.git|\.distribution-cache)[\\/]' -or $taskRelative -match '(^|[\\/])(bin|obj|TestResults|\.vs|\.avalonia-build-tasks)[\\/]') { continue }
+            if ($taskRelative -match '^(app|\.git|\.distribution-cache)[\\/]' -or $taskRelative -match '(^|[\\/])(bin|obj|TestResults|__pycache__|\.vs|\.avalonia-build-tasks)[\\/]') { continue }
             if ($taskRelative -match '(\.(p12|jks|keystore|apk|idsig)$|(^|[\\/])\.env($|\.))') { continue }
             $taskEntry = 'WorshipStudio/' + $taskRelative.Replace('\','/')
             [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($taskArchive,$taskFile.FullName,$taskEntry,[IO.Compression.CompressionLevel]::Optimal) | Out-Null

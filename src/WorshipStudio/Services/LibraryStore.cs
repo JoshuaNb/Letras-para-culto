@@ -40,7 +40,8 @@ public sealed class LibraryStore
         if (!info.Exists) throw new FileNotFoundException("Mídia não encontrada.", source);
         if (info.Length > 4L * 1024 * 1024 * 1024) throw new InvalidDataException("A mídia excede o limite de 4 GB.");
         using var stream = File.OpenRead(source);
-        var hash = Convert.ToHexString(SHA256.HashData(stream))[..20];
+        using var sha = SHA256.Create();
+        var hash = Convert.ToHexString(sha.ComputeHash(stream))[..20];
         var destination = Path.Combine(DirectoryPath, "media", hash + Path.GetExtension(source).ToLowerInvariant());
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         if (!File.Exists(destination)) File.Copy(source, destination);

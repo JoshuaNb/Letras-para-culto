@@ -45,7 +45,12 @@ public sealed class UpdateService : IDisposable
     {
         _ownsClient = client == null;
         // Redirecionamentos são seguidos explicitamente: cada destino precisa ser um host de releases do GitHub.
-        _client = client ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+        var handler = client == null ? new HttpClientHandler { AllowAutoRedirect = false } : null;
+#if NET6_0
+        // O GitHub exige TLS 1.2; o padrão do Schannel no Windows antigo pode escolher TLS 1.0.
+        if (handler != null) handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+#endif
+        _client = client ?? new HttpClient(handler!)
         {
             Timeout = TimeSpan.FromSeconds(45)
         };

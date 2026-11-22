@@ -3,7 +3,8 @@
 Execute com o SDK .NET 10 no Windows:
 
 ```powershell
-dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -f net10.0 -- --output test-evidence/typography-1.5.0-net10.0
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -f net6.0 -- --output test-evidence/typography-1.5.0-net6.0
 ```
 
 O programa usa os arquivos de produção `StageRenderer.cs`, `StudioModels.cs` e `ColorField.cs`, vinculados diretamente pelo projeto. O ambiente Avalonia Headless usa pixels reais do Skia com renderização por software. Não abre janelas reais do Windows, não inicializa o player de mídia e não acessa a biblioteca do usuário.

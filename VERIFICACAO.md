@@ -1,4 +1,39 @@
-# Verificação — Worship Studio 1.4.0
+# Verificação — Worship Studio 1.5.0
+
+## Resultado 1.5 — runtimes atual e legado
+
+Data: 22/11/2026, America/Sao_Paulo. **583 verificações aprovadas, zero falhas finais:** 544 nas suítes C#/Avalonia dos dois runtimes, 32 Java e sete do FFmpeg legado. Os testes executaram no Windows 11 disponível; não constituem teste de execução em Windows 7, 8 ou 10.
+
+| Suíte | .NET 10 | .NET 6.0.36 | Evidência no ZIP completo |
+| --- | ---: | ---: | --- |
+| Núcleo e serviços | 138 | 138 | `test-evidence/core-1.5.0-<net10.0 ou net6.0>/verification.trx` |
+| Tipografia e animações clássicas | 29 | 29 | `test-evidence/typography-1.5.0-<framework>/typography-render-tests.json` |
+| Animações granulares | 79 | 79 | `test-evidence/typography-1.5.0-<framework>/granularity-1.2/granularity-render-tests.json` |
+| Operação real do PC em Avalonia Headless/Skia | 26 | 26 | `test-evidence/ui-headless-1.5.0-<framework>/results.json` |
+
+Os 138 casos incluem cinco verificações da política de renderização e três novas regressões de corpos HTTP fragmentados, chunked e truncados, autenticação e operação única. O código de produção é o mesmo nas duas compilações. O build selecionou explicitamente o FFmpeg correspondente por `WORSHIP_FFMPEG`: os testes MP4 da edição legado exercitaram o executável legado final, incluindo composição real de fundo e conferência de pixels.
+
+O parser Android passou em 32 verificações Java. O APK 1.5 mantém o protocolo e código de operação da 1.4; a mudança é a versão do pacote, recompilado e assinado com o mesmo certificado definitivo, com esquemas v2/v3 e alinhamento conferidos. A instalação em celular físico continua pendente.
+
+### Dependências nativas e MP4 legado
+
+O FFmpeg legado foi compilado do mesmo fonte 8.1.3 com w64devkit/MSVCRT e alvo Windows 7, sem rede e sem bibliotecas externas opcionais. A receita final usa `--disable-asm`: uma compilação intermediária apresentou cores incorretas na conversão RGB/YUV e foi descartada. O binário final passou na leitura independente de pixels vermelhos sobre fundo azul, PNG por pipe, oito frames MPEG4, áudio AAC preenchido e composição de fundo em loop.
+
+As sete verificações estão em `test-evidence/windows-legacy-native/final/ffmpeg-legacy-results.json`. A auditoria normal e de delay-imports dos dois executáveis constatou x64, subsistema PE 6.1 e ausência de imports conhecidos posteriores ao Windows 7. O código do verificador e a receita estão em `tools/ffmpeg-legacy`. A auditoria CRT do runtime 6 e dos plugins LibVLC está em `test-evidence/windows-legacy-native/crt-audit.json`.
+
+O payload publicado inclui .NET 6.0.36 completo, `ucrtbase.dll` e API sets locais. Skia/HarfBuzz e LibVLC não exigem instalação global do Visual C++ para essa composição de binários. O ANGLE moderno é excluído da edição legado; `WindowsCompatibility` seleciona somente Skia por software nessa edição.
+
+### Instalador universal
+
+Os três ensaios finais passaram com identidade, pasta, dados e grupo de atalhos isolados: **1.4 → 1.5 atual**, **1.4 → 1.5 legado** e **1.5 legado → 1.5 atual**. Cada etapa abriu o aplicativo, carregou o `coreclr.dll` da própria instalação com o runtime esperado e respondeu. Os hashes dos binários, FFmpeg e APK corresponderam aos payloads; não restaram binários exclusivos da outra edição. Biblioteca e preferências foram preservadas, as desinstalações retornaram zero e registro/atalhos da instalação original do operador permaneceram iguais.
+
+Relatório final: `test-evidence/installer-1.5/results.json`, `RunId=final`, `Passed=true`. O primeiro ensaio da sonda esperava pontos no texto de versão do runtime, que veio com vírgulas; a verificação foi corrigida para usar os campos numéricos `FileMajorPart`/`FileMinorPart`. Nenhum binário do aplicativo foi alterado por essa correção. O resultado inicial está preservado como `results-initial-probe.json`; os três cenários foram repetidos em identidades novas. O código e as instruções de reprodução acompanham a pasta de evidências. O instalador forçado para legado é exclusivo de QA e não é publicado.
+
+### Limites desta validação
+
+Não há máquinas ou imagens Windows 7/8/10 disponíveis nesta sessão. Compilação, inspeção de dependências, testes no runtime antigo e instalação forçada do payload legado em Windows 11 não substituem um ensaio nesses sistemas. Windows 7 requer SP1 e a API `AddDllDirectory` da KB3063858 ou equivalente; x86/32 bits não está incluído. A edição legado usa um runtime cujo suporte regular terminou. Os [requisitos e limites](docs/COMPATIBILIDADE-WINDOWS.md) distinguem compatibilidade pretendida de suporte oficial dos fornecedores.
+
+Continuam pendentes celular físico, biblioteca real do Holyrics, dois monitores físicos e sinal de áudio não nulo na igreja. As evidências seguintes são históricas da 1.4 e anteriores.
 
 ## Resultado da versão 1.4 — Android e Holyrics
 

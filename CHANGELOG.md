@@ -2,6 +2,17 @@
 
 O projeto é publicado como **Letras para culto**. O aplicativo e os arquivos de PC mantêm o nome **Worship Studio**, preservando a atualização das instalações existentes.
 
+## 1.5.0 — Compatibilidade com Windows antigos
+
+- Instalador universal x64 para Windows 7 SP1, 8, 8.1, 10 e 11, com seleção automática de .NET 10 ou .NET 6.0.36 e runtimes incluídos para instalação offline.
+- Edição legado com o mesmo painel, projeção, animações, Holyrics e controle remoto, usando Skia por software e sem carregar o ANGLE moderno.
+- FFmpeg legado recompilado para Windows 7/MSVCRT, mantendo MP4, áudio AAC e composição de vídeo. Edição moderna conserva seu codificador e GPU.
+- Manifesto Windows e informações de DPI ampliados; instalador verifica a API da KB3063858 no Windows 7 antes de alterar a instalação.
+- Serviços de rede, hashes e exportação compatíveis com .NET 6; atualizador legado usa TLS 1.2. Remoção controlada de binários exclusivos do outro runtime ao atualizar.
+- Testes nos dois runtimes, regressões de leitura HTTP fragmentada e ensaios isolados dos dois caminhos do instalador. Windows de 32 bits e Windows 7 sem SP1 não estão incluídos.
+
+**Limite:** os testes de execução desta sessão usam Windows 11. A execução em Windows 7/8/10 ainda precisa ser validada nesses sistemas; a edição legado não restaura suporte oficial de seus fornecedores. [Compatibilidade e requisitos](docs/COMPATIBILIDADE-WINDOWS.md) · [Notas 1.5](docs/releases/v1.5.0.md).
+
 ## 1.4.0 — Controle Android e biblioteca do Holyrics
 
 - Adicionado **Letras para culto · Controle**, APK nativo em português brasileiro para Android 8.0 ou superior, sem conta, nuvem ou dependência de serviços Google.

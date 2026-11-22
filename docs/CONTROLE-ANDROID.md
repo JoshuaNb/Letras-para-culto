@@ -2,7 +2,7 @@
 
 **Letras para culto · Controle** opera a apresentação do Worship Studio na mesma rede local. O aplicativo é nativo Android, em português brasileiro, gratuito e sem conta, anúncios, nuvem ou serviços Google. Requer Android 8.0 ou superior; o APK não depende de uma arquitetura específica de processador.
 
-[Baixar o APK 1.4.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.4.0/LetrasParaCulto-Controle-1.4.0.apk) · [Instalador de PC 1.4.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.4.0/WorshipStudio-Setup-1.4.0.exe).
+[Baixar o APK 1.5.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.5.0/LetrasParaCulto-Controle-1.5.0.apk) · [Instalador de PC 1.5.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.5.0/WorshipStudio-Setup-1.5.0.exe).
 
 O instalador de PC também inclui o arquivo Android. Abra **Conexões → Baixar APK para Android…**, escolha onde salvar e transfira o APK ao celular, por exemplo por cabo. Salvar essa cópia não exige internet; se o arquivo não estiver presente na instalação, o botão abre o download oficial da mesma versão no GitHub.
 

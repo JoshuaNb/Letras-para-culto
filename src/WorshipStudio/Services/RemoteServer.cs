@@ -259,7 +259,7 @@ public sealed class RemoteServer : IDisposable
                     throw new InvalidDataException();
                 }
                 var bytes = new byte[size];
-                await stream.ReadExactlyAsync(bytes, ct);
+                await ReadExactly(stream, bytes, ct);
                 await body.WriteAsync(bytes, ct);
                 if ((await ReadLine(stream, 2, ct)).Length != 0) throw new InvalidDataException();
             }
@@ -268,8 +268,18 @@ public sealed class RemoteServer : IDisposable
         if (!headers.TryGetValue("Content-Length", out var lengthText)) return [];
         if (!int.TryParse(lengthText, out var length) || length < 0 || length > 2048) throw new InvalidDataException();
         var content = new byte[length];
-        await stream.ReadExactlyAsync(content, ct);
+        await ReadExactly(stream, content, ct);
         return content;
+    }
+
+    private static async Task ReadExactly(Stream stream, Memory<byte> buffer, CancellationToken ct)
+    {
+        while (!buffer.IsEmpty)
+        {
+            var count = await stream.ReadAsync(buffer, ct).ConfigureAwait(false);
+            if (count == 0) throw new EndOfStreamException("Conexão encerrada antes do fim da mensagem.");
+            buffer = buffer[count..];
+        }
     }
 
     private static async Task<string> ReadLine(NetworkStream stream, int maximum, CancellationToken ct)
