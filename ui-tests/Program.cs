@@ -113,6 +113,31 @@ try
         Require(C<TabControl>("InspectorTabs").SelectedIndex == 0, "Operação não retornou à cena.");
     });
 
+    Check("Conexões oferecem pareamento Android e download do APK sem iniciar servidor", () =>
+    {
+        C<TabControl>("InspectorTabs").SelectedIndex=1;Pump();
+        Require(C<TextBlock>("PairingCodeLabel").Text=="— — — — — —","Um código de pareamento apareceu com servidor desligado.");
+        Require(string.IsNullOrEmpty(C<TextBox>("RemoteHostAddress").Text),"O endereço deveria ficar vazio com controle desligado.");
+        Require(C<Button>("DownloadApkButton").Content as string=="Baixar APK para Android…","Atalho para salvar o APK não foi composto.");
+        C<TabControl>("InspectorTabs").SelectedIndex=0;Pump();
+    });
+
+    Check("Baixar letras abre a janela real do Holyrics e cancelar preserva a biblioteca", () =>
+    {
+        C<TabControl>("InspectorTabs").SelectedIndex=1;Pump();
+        var open=C<Button>("HolyricsImportButton");open.BringIntoView();Pump();Click(open);
+        var dialog=main.OwnedWindows.OfType<HolyricsImportWindow>().Single(w=>w.IsVisible);Pump();
+        T H<T>(string name) where T:Control=>dialog.GetVisualDescendants().OfType<T>().Single(c=>c.Name==name);
+        Require(H<TextBox>("HolyricsDownloadUrl").Text==C<TextBox>("HolyricsUrl").Text,"O endereço do servidor não foi transferido à janela.");
+        Require(H<Button>("HolyricsCatalogConnect").IsEnabled,"O catálogo não está pronto para consulta explícita.");
+        Require(!H<Button>("HolyricsCatalogDownload").IsEnabled,"Download foi habilitado sem seleção.");
+        Capture(dialog,"holyrics-download");
+        Click(H<Button>("HolyricsCatalogCancel"));Pump();
+        Require(!dialog.IsVisible&&open.IsEnabled,"Cancelar não reativou a operação.");
+        Require(new LibraryStore().Load().Songs.Count==2,"Cancelar a importação alterou a biblioteca.");
+        C<TabControl>("InspectorTabs").SelectedIndex=0;Pump();
+    });
+
     Check("Preferências exibem versão e opção de consulta automática desativada", () =>
     {
         C<TabControl>("InspectorTabs").SelectedIndex = 2; Pump();

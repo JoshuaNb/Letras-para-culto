@@ -1,0 +1,34 @@
+{
+  "version": "1.4.0",
+  "package": "br.com.letrasparaculto.controle",
+  "versionCode": 10400,
+  "artifact": "LetrasParaCulto-Controle-1.4.0.apk",
+  "size": 45597,
+  "sha256": "08d6ff7b1ec15e47ea29b2b578f5fc1d882dddce5db8a10a6de55d15e6eed354",
+  "java": "OpenJDK 21.0.13.1, --release 8",
+  "androidPlatform": 36,
+  "buildTools": "36.0.0",
+  "minimumApi": 26,
+  "targetApi": 36,
+  "connectionParserTests": {
+    "passed": 32,
+    "failed": 0,
+    "suite": "tests/RemoteConnectionTests.java"
+  },
+  "compiledWithoutWarningsOrErrors": true,
+  "apkSignature": {
+    "verified": true,
+    "schemeV2": true,
+    "schemeV3": true,
+    "keyAlgorithm": "RSA",
+    "keyBits": 3072,
+    "certificateSha256": "f8921f8a937ad73c9262604c4ee2c8083530767f694f5420830bfcb00d0c1b04"
+  },
+  "zipalign4And16KVerified": true,
+  "manifestVerifiedByAapt2": true,
+  "permissions": ["android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"],
+  "packagedLicense": "assets/LICENSE.txt",
+  "releaseSigningKeyOutsideSource": true,
+  "activityLifecycleReview": "Static review: resumed/destroyed/session generation are volatile; queued connect/poll/command tasks check active generation and resumed state before starting network I/O. Pair and command flows check again before follow-up state requests. This was compiled, not runtime-tested on Android.",
+  "runtimeDeviceValidation": "Not asserted by this build report. Record emulator and physical-device results separately."
+}

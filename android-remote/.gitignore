@@ -1,0 +1,6 @@
+bin/
+*.apk
+*.apk.idsig
+*.jks
+*.keystore
+local.properties

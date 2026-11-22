@@ -35,6 +35,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao publicar.' }
 Copy-Item -Path (Join-Path $taskProjectRoot 'licenses') -Destination $taskPublish -Recurse -Force
 Copy-Item -Path (Join-Path $taskProjectRoot 'LICENSE.txt') -Destination (Join-Path $taskPublish 'WorshipStudio-LICENSE.txt') -Force
 Copy-Item -Path (Join-Path $taskProjectRoot 'README.pt-BR.md') -Destination $taskPublish -Force
+$taskApk=Join-Path (Split-Path $taskProjectRoot -Parent) "LetrasParaCulto-Controle-$taskVersion.apk"
+if(Test-Path -LiteralPath $taskApk){Copy-Item -LiteralPath $taskApk -Destination $taskPublish -Force}
 if (Test-Path (Join-Path $taskProjectRoot 'VERIFICACAO.md')) { Copy-Item -Path (Join-Path $taskProjectRoot 'VERIFICACAO.md') -Destination $taskPublish -Force }
 if (-not $SkipInstaller) {
     if (-not $InnoCompiler) {

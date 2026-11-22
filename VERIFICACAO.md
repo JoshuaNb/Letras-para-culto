@@ -1,4 +1,48 @@
-# Verificação — Worship Studio 1.3.0
+# Verificação — Worship Studio 1.4.0
+
+## Resultado da versão 1.4 — Android e Holyrics
+
+Data: 22/11/2026, America/Sao_Paulo. **320 verificações aprovadas, zero falhas finais ou testes ignorados.**
+
+| Suíte | Aprovações | Evidência no código-fonte completo |
+| --- | ---: | --- |
+| Núcleo e serviços | 130 | `test-evidence/core-1.4/verification.trx` |
+| Tipografia e animações clássicas | 29 | `test-evidence/typography-1.4.0/typography-render-tests.json` |
+| Animações granulares | 79 | `test-evidence/typography-1.4.0/granularity-1.2/granularity-render-tests.json` |
+| Operação real do PC em Avalonia Headless/Skia | 26 | `test-evidence/ui-headless-1.4.0/results.json` |
+| Janela de download Holyrics em Headless/Skia | 7 | `test-evidence/holyrics-1.4/window-results.json` |
+| Validação da conexão Android em Java | 32 | `android-remote/verification/build-1.4.0.json` |
+| Cliente Android e operação PC por HTTP real | 17 | `test-evidence/android-1.4/android-client-results.json` |
+
+O núcleo inclui 18 casos novos de pareamento e 19 de seleção/download do Holyrics. Os testes TCP usam Loopback; não abrem o processo de testes à rede da igreja. Na produção, o servidor escuta a rede local somente depois de o operador iniciar o controle.
+
+### Prova entre os componentes de produção
+
+`RemoteConnection.java` e `RemoteClient.java` são os arquivos exatos incluídos no APK. Executaram na JVM com a implementação oficial org.json para Java, conectados por HTTP real ao `RemoteServer` de produção em Loopback. O host usou `MainWindow`, `ProjectionWindow`, `StageSurface` e serviço de áudio reais com backend de janelas Avalonia Headless. Não se substituíram respostas HTTP por mocks nessa prova.
+
+Foram observados pareamento real, leitura da apresentação, próxima/anterior, tela preta, ocultar/restaurar letra, seleção de estrofe e pulso no frame. Credencial incorreta, comandos inválidos e índice negativo foram recusados; reiniciar revogou o token, novo pareamento preservou a apresentação e desligar encerrou o acesso. O relatório complementar `test-evidence/android-1.4/desktop-host-results.json` confirma a chegada dos comandos aos componentes de produção e o pulso no serviço de áudio.
+
+### APK e Holyrics
+
+O APK nativo foi compilado com JDK 21, plataforma Android 36 e build-tools 36.0.0, compatível com API mínima 26. A assinatura definitiva RSA 3072 foi conferida pelos esquemas APK v2/v3; alinhamento e manifesto foram verificados com ferramentas Android oficiais. O pacote inclui a licença MIT. Keystore e senhas ficam fora do código-fonte, dos pacotes e do GitHub. Hash e tamanho finais estão no manifesto da Release.
+
+O APK lembra somente o endereço do PC; código e token ficam na sessão. Uma revisão estática corrigiu o envio de tarefas enfileiradas depois de pausar a Activity. Isso não é apresentado como teste de ciclo de vida em Android real.
+
+O Holyrics foi verificado com respostas controladas do contrato oficial GetSongs/GetLyrics e sua janela real: catálogo, busca sem diferença de acento, seleção conservada ao filtrar, quatro temas, download somente das selecionadas, progresso, cancelamento e lote completo sem gravação parcial. A operação do botão da janela principal também foi testada, incluindo abertura e cancelamento sem alterar a biblioteca.
+
+### Instalador da versão 1.4
+
+A instalação 1.3.0, atualização para 1.4.0 e desinstalação foram aprovadas com identidade, diretório e grupo de atalhos isolados. Os hashes do executável gerenciado, runtime, LibVLC, FFmpeg e APK instalado corresponderam ao payload. Biblioteca e preferências de teste foram preservadas; o runtime veio da própria instalação, e o programa abriu e respondeu. Registro e atalhos da instalação existente do operador permaneceram iguais. Relatório: `test-evidence/installer-1.4/results.json`.
+
+### Limites da versão 1.4
+
+O APK foi compilado e assinado, e seus clientes de rede foram exercitados por HTTP real. **A Activity, os toques e a instalação em celular físico ainda não foram observados.** O emulador local não ficou disponível sem aceleração de virtualização; não se alterou BIOS, hipervisor ou configuração de segurança do equipamento para tentar habilitá-lo. As capturas de PC são desenhos reais da interface em Skia com backend Headless.
+
+A importação não foi exercitada contra uma biblioteca física específica do Holyrics do usuário: é necessário ativar o API Server e fornecer seu token de leitura. Permanecem pendentes dois monitores físicos e áudio não nulo na igreja. Não há benchmark de FPS/latência, download de áudio MP3, BPM, sincronização de sílabas ou importação de modelos 3D.
+
+## Histórico — versão 1.3.0
+
+Os registros seguintes descrevem a distribuição anterior; suas evidências históricas estão no ZIP da Release 1.3.0. A validação atual está detalhada acima.
 
 Data: 22/11/2026, America/Sao_Paulo. Compilação Release .NET 10, Avalonia 11.3.22, Windows x64, runtime incluído na distribuição. O equipamento de desenvolvimento tem Ryzen 5 5600G, RX 6600 e um monitor físico.
 

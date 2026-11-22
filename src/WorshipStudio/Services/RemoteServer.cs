@@ -18,23 +18,36 @@ public sealed class RemoteServer : IDisposable
     private Action<string, int?>? _command;
     private readonly SemaphoreSlim _clients = new(8);
     private readonly ConcurrentDictionary<string, Queue<long>> _commandTimes = new();
+    private readonly TimeProvider _timeProvider;
+    private readonly object _pairingGate = new();
+    private readonly Dictionary<string, Queue<long>> _pairingTimes = new();
+    private readonly Queue<long> _allPairingTimes = new();
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     public string Token { get; private set; } = "";
+    public string PairingCode { get; private set; } = "";
+    public DateTimeOffset PairingExpiresAt { get; private set; }
     public int Port { get; private set; }
     public bool IsRunning => _listener != null;
     public IReadOnlyList<string> Urls => GetLocalAddresses().Select(ip => $"http://{ip}:{Port}/?token={Token}").ToArray();
     public event Action<string>? Error;
 
-    public void Start(int port, Func<object> getState, Action<string, int?> command)
+    public RemoteServer(TimeProvider? timeProvider = null) => _timeProvider = timeProvider ?? TimeProvider.System;
+
+    public void Start(int port, Func<object> getState, Action<string, int?> command, IPAddress? listenAddress = null)
     {
         if (port is < 1024 or > 65535) throw new ArgumentOutOfRangeException(nameof(port), "Use uma porta entre 1024 e 65535.");
         Stop();
-        Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
         _commandTimes.Clear();
         _getState = getState;
         _command = command;
-        var listener = new TcpListener(IPAddress.Any, port);
+        var listener = new TcpListener(listenAddress ?? IPAddress.Any, port);
         listener.Start(8);
+        lock (_pairingGate)
+        {
+            Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
+            PairingCode = RandomNumberGenerator.GetInt32(1_000_000).ToString("D6", CultureInfo.InvariantCulture);
+            PairingExpiresAt = _timeProvider.GetUtcNow().AddMinutes(10);
+        }
         Port = port;
         _listener = listener;
         _cts = new CancellationTokenSource();
@@ -48,7 +61,14 @@ public sealed class RemoteServer : IDisposable
         _listener = null;
         _cts?.Dispose();
         _cts = null;
-        Token = "";
+        lock (_pairingGate)
+        {
+            Token = "";
+            PairingCode = "";
+            PairingExpiresAt = default;
+            _pairingTimes.Clear();
+            _allPairingTimes.Clear();
+        }
     }
 
     private async Task AcceptLoop(TcpListener listener, CancellationToken cancellationToken)
@@ -106,6 +126,10 @@ public sealed class RemoteServer : IDisposable
                 if (first[0] == "GET" && path == "/")
                 {
                     await Reply(stream, 200, "text/html; charset=utf-8", ControllerHtml, ct); return;
+                }
+                if (first[0] == "POST" && path == "/pair")
+                {
+                    await Pair(stream, headers, body, remote.Address, ct); return;
                 }
                 if (!headers.TryGetValue("Authorization", out var authorization) || !ValidToken(authorization))
                 {
@@ -166,6 +190,56 @@ public sealed class RemoteServer : IDisposable
         var incoming = Encoding.UTF8.GetBytes(authorization[prefix.Length..]);
         var expected = Encoding.UTF8.GetBytes(Token);
         return incoming.Length == expected.Length && CryptographicOperations.FixedTimeEquals(incoming, expected);
+    }
+
+    private async Task Pair(NetworkStream stream, Dictionary<string, string> headers, byte[] body, IPAddress remote, CancellationToken ct)
+    {
+        // Pairing is local-only, short-lived, JSON-only and limited across both an address and the whole server.
+        bool rateLimited;
+        lock (_pairingGate)
+        {
+            var now = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
+            while (_allPairingTimes.TryPeek(out var time) && now - time >= 60_000) _allPairingTimes.Dequeue();
+            foreach (var key in _pairingTimes.Keys.ToArray())
+            {
+                var queue = _pairingTimes[key];
+                while (queue.TryPeek(out var time) && now - time >= 60_000) queue.Dequeue();
+                if (queue.Count == 0) _pairingTimes.Remove(key);
+            }
+            var address = remote.ToString();
+            if (!_pairingTimes.TryGetValue(address, out var attempts)) _pairingTimes[address] = attempts = new Queue<long>();
+            rateLimited = attempts.Count >= 5 || _allPairingTimes.Count >= 30;
+            if (!rateLimited) { attempts.Enqueue(now);_allPairingTimes.Enqueue(now); }
+        }
+        if (rateLimited)
+        { await Reply(stream, 429, "application/json", "{\"error\":\"Muitas tentativas de pareamento. Aguarde um minuto.\"}", ct); return; }
+        if (!headers.TryGetValue("Content-Type", out var contentType) || !contentType.Split(';', 2)[0].Trim().Equals("application/json", StringComparison.OrdinalIgnoreCase))
+        { await Reply(stream, 415, "application/json", "{\"error\":\"Use JSON para parear o celular.\"}", ct); return; }
+        string code;
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("code", out var value) || value.ValueKind != JsonValueKind.String)
+            { await Reply(stream, 400, "application/json", "{\"error\":\"Informe o código de seis dígitos mostrado no computador.\"}", ct); return; }
+            code = value.GetString() ?? "";
+        }
+        catch (JsonException)
+        { await Reply(stream, 400, "application/json", "{\"error\":\"Dados de pareamento inválidos.\"}", ct); return; }
+
+        var status = 200;
+        string response;
+        lock (_pairingGate)
+        {
+            if (PairingCode.Length == 0 || Token.Length == 0)
+            { status = 401; response = "{\"error\":\"Controle remoto desligado.\"}"; }
+            else if (_timeProvider.GetUtcNow() >= PairingExpiresAt)
+            { status = 410; response = "{\"error\":\"Código expirado. Reinicie o controle remoto no computador para gerar outro.\"}"; }
+            else if (code.Length != 6 || code.Any(c => c is < '0' or > '9') ||
+                !CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(code), Encoding.ASCII.GetBytes(PairingCode)))
+            { status = 401; response = "{\"error\":\"Código de pareamento inválido.\"}"; }
+            else response = JsonSerializer.Serialize(new { token = Token });
+        }
+        await Reply(stream, status, "application/json; charset=utf-8", response, ct);
     }
 
     private static async Task<byte[]> ReadBody(NetworkStream stream, Dictionary<string, string> headers, CancellationToken ct)

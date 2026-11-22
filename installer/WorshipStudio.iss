@@ -2,7 +2,7 @@
   #define AppSource "..\app\win-x64"
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.3.0"
+  #define AppVersion "1.4.0"
 #endif
 #ifndef AppIdentity
   #define AppIdentity "{{7DE7E094-533F-4EB2-A817-CE015CE1A823}"

@@ -1,10 +1,10 @@
-# Worship Studio 1.2.0
+# Worship Studio 1.4.0
 
 Aplicativo desktop em C#/.NET 10 e Avalonia UI para preparar e projetar letras de louvores. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
 
 ## Instalação e primeira projeção
 
-1. Execute `WorshipStudio-Setup-1.2.0.exe` no Windows 11 x64. A instalação é por usuário, sem exigir administrador. .NET, LibVLC e FFmpeg necessários já acompanham o pacote. A atualização preserva a biblioteca existente.
+1. Execute `WorshipStudio-Setup-1.4.0.exe` no Windows 11 x64. A instalação é por usuário, sem exigir administrador. .NET, LibVLC e FFmpeg necessários já acompanham o pacote. A atualização preserva a biblioteca existente.
 2. Para dois monitores, escolha **Estender estes vídeos** nas configurações de vídeo do Windows. Ligue o projetor antes de iniciar.
 3. Abra Worship Studio. Na aba **Cena**, escolha o monitor de saída.
 4. Clique **Abrir projeção**. A janela de operação permanece independente da projeção. A janela de saída pode funcionar no mesmo monitor quando não há segunda tela.
@@ -12,6 +12,15 @@ Aplicativo desktop em C#/.NET 10 e Avalonia UI para preparar e projetar letras d
 6. Use **Próxima**, **Anterior**, **Ocultar letra** e **Tela preta** durante o culto.
 
 O louvor inicial é um texto original curto para conferir a operação. Importe ou cadastre a biblioteca da igreja.
+
+## Novidades da versão 1.4
+
+- **Android:** em Conexões, inicie o controle remoto. No APK Letras para culto — Controle, informe o endereço do PC e o código de seis dígitos mostrado na tela. O código dura dez minutos; desligar o controle revoga o acesso. Os aparelhos devem estar na mesma rede local.
+- **APK incluído:** Baixar APK para Android permite salvar uma cópia do aplicativo para transferir ao celular, sem internet. O APK também está disponível na Release do GitHub.
+- **Holyrics:** em Conexões, clique Baixar letras do Holyrics, conecte ao API Server, pesquise o catálogo e marque as músicas desejadas. O download traz letras e estrofes para a biblioteca local; não baixa arquivos MP3.
+- **Temas e atualização:** escolha Branco, Escuro, Cinza ou Amarelo pastel no cabeçalho. O botão Atualizações consulta novas versões estáveis do GitHub; a busca automática pode ser desativada em App. A operação permanece offline.
+
+Guia completo e downloads: [Letras para culto no GitHub](https://github.com/JoshuaNb/Letras-para-culto).
 
 ## Biblioteca e roteiro
 

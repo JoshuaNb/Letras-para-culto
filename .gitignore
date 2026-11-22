@@ -15,3 +15,8 @@ app/
 third-party-sources/*.tar.*
 .distribution-cache/
 test-evidence/
+*.apk
+*.idsig
+*.jks
+*.p12
+*.keystore

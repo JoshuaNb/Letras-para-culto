@@ -1,4 +1,6 @@
 using System.Net.Http;
+using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Xml;
@@ -12,29 +14,107 @@ public sealed record HolyricsPresentation(string Title, string Text, int Index, 
     public IReadOnlyList<Slide> Slides { get; init; } = Array.Empty<Slide>();
 }
 
+public sealed record HolyricsCatalogSong(string Id, string Title, string Artist)
+{
+    internal Song? EmbeddedSong { get; init; }
+}
+
+public sealed record HolyricsDownloadProgress(int Completed, int Total, string Title)
+{
+    public double Fraction => Total == 0 ? 0 : Math.Clamp((double)Completed / Total, 0, 1);
+}
+
 /// <summary>Read-only integration with the official local Holyrics API Server.</summary>
 public sealed class HolyricsService : IDisposable
 {
-    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(6) };
+    private const int MaximumSongs = 50000;
+    private const int MaximumResponseBytes = 32 * 1024 * 1024;
+    private readonly HttpClient _http;
+    private readonly bool _ownsClient;
     public event Action<string>? Error;
+
+    public HolyricsService(HttpClient? http = null)
+    {
+        _ownsClient = http == null;
+        _http = http ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(8) };
+    }
 
     public async Task<List<Song>> ImportLibraryAsync(string baseUrl, string token, CancellationToken ct = default)
     {
-        var data = await Request(baseUrl, token, "GetSongs", new { fields = "id,title,artist,author,slides,order" }, ct);
+        var catalog = await GetCatalogAsync(baseUrl, token, ct).ConfigureAwait(false);
+        return await DownloadSongsAsync(baseUrl, token, catalog, null, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Lists metadata from the connected Holyrics library; no public cloud catalog is queried.</summary>
+    public async Task<IReadOnlyList<HolyricsCatalogSong>> GetCatalogAsync(string baseUrl, string token, CancellationToken ct = default)
+    {
+        var data = await Request(baseUrl, token, "GetSongs", new { fields = "id,title,artist,author" }, ct).ConfigureAwait(false);
         if (data.ValueKind != JsonValueKind.Array) throw new InvalidDataException("O Holyrics não retornou uma lista de músicas.");
-        var songs = new List<Song>();
+        if (data.GetArrayLength() > MaximumSongs) throw new InvalidDataException("A biblioteca excede o limite de 50.000 músicas por importação.");
+        var catalog = new List<HolyricsCatalogSong>();
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        var position = 0;
         foreach (var item in data.EnumerateArray())
         {
             ct.ThrowIfCancellationRequested();
-            var songData = item;
-            if ((!item.TryGetProperty("slides", out var slides) || slides.ValueKind != JsonValueKind.Array || slides.GetArrayLength() == 0) &&
-                item.TryGetProperty("id", out var id))
-                songData = await Request(baseUrl, token, "GetLyrics", new { id = id.GetString(), fields = "id,title,artist,author,slides,order" }, ct);
-            var song = ParseJsonSong(songData);
-            if (song != null) songs.Add(song);
+            position++;
+            if (item.ValueKind != JsonValueKind.Object) continue;
+            var cached = ParseJsonSong(item);
+            var id = Identifier(item);
+            if (id.Length == 0 && cached != null) id = "embedded-" + position.ToString(CultureInfo.InvariantCulture);
+            if (!ValidIdentifier(id) || !ids.Add(id)) continue;
+            var title = String(item, "title").Trim();
+            if (title.Length == 0) title = cached?.Title ?? "Sem título";
+            var artist = String(item, "artist").Trim();
+            if (artist.Length == 0) artist = String(item, "author").Trim();
+            if (title.Length > 4096 || artist.Length > 4096) throw new InvalidDataException("O catálogo contém nomes de músicas inválidos.");
+            catalog.Add(new HolyricsCatalogSong(id, title, artist) { EmbeddedSong = cached });
         }
+        return catalog;
+    }
+
+    public static IReadOnlyList<HolyricsCatalogSong> FilterCatalog(IEnumerable<HolyricsCatalogSong> catalog, string? query)
+    {
+        var text = query?.Trim() ?? "";
+        if (text.Length == 0) return catalog.ToArray();
+        var comparison = CultureInfo.GetCultureInfo("pt-BR").CompareInfo;
+        const CompareOptions options = CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace;
+        return catalog.Where(song => comparison.IndexOf(song.Title, text, options) >= 0 || comparison.IndexOf(song.Artist, text, options) >= 0).ToArray();
+    }
+
+    /// <summary>Returns a complete selected batch. Cancellation/failure never writes the local library.</summary>
+    public async Task<List<Song>> DownloadSongsAsync(string baseUrl, string token, IEnumerable<HolyricsCatalogSong> selection,
+        IProgress<HolyricsDownloadProgress>? progress = null, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
+        var selected = selection.Take(MaximumSongs + 1).ToArray();
+        if (selected.Length > MaximumSongs) throw new InvalidDataException("Selecione no máximo 50.000 músicas.");
+        if (selected.Any(song => song == null || !ValidIdentifier(song.Id))) throw new InvalidDataException("Uma música selecionada não possui identificador válido.");
+        selected = selected.DistinctBy(song => song.Id, StringComparer.Ordinal).ToArray();
+        var songs = new List<Song>();
+        progress?.Report(new HolyricsDownloadProgress(0, selected.Length, ""));
+        foreach (var item in selected)
+        {
+            ct.ThrowIfCancellationRequested();
+            var song = item.EmbeddedSong;
+            if (song == null)
+            {
+                var details = await Request(baseUrl, token, "GetLyrics", new { id = item.Id, fields = "id,title,artist,author,slides,order" }, ct).ConfigureAwait(false);
+                song = ParseJsonSong(details);
+            }
+            if (song == null) throw new InvalidDataException($"A música “{item.Title}” não está disponível com letra. Atualize o catálogo e confira as permissões GetLyrics no Holyrics.");
+            if (song.Lyrics.Length > 2_000_000) throw new InvalidDataException("Uma letra excedeu o limite de tamanho permitido.");
+            songs.Add(song with { Id = Guid.NewGuid(), Title = song.Title == "Sem título" ? item.Title : song.Title,
+                Artist = string.IsNullOrWhiteSpace(song.Artist) ? item.Artist : song.Artist });
+            progress?.Report(new HolyricsDownloadProgress(songs.Count, selected.Length, item.Title));
+        }
+        ct.ThrowIfCancellationRequested();
         return songs;
     }
+
+    private static string Identifier(JsonElement item) => item.TryGetProperty("id", out var value)
+        ? value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.ValueKind == JsonValueKind.Number ? value.GetRawText() : "" : "";
+    private static bool ValidIdentifier(string? id) => !string.IsNullOrWhiteSpace(id) && id.Length <= 512 && !id.Any(char.IsControl);
 
     public async Task FollowAsync(string baseUrl, string token, Action<HolyricsPresentation> onChange, CancellationToken ct = default)
     {
@@ -192,19 +272,42 @@ public sealed class HolyricsService : IDisposable
         if (!string.IsNullOrEmpty(root.UserInfo) || root.Query.Length > 0 || root.Fragment.Length > 0) throw new ArgumentException("O endereço deve conter apenas protocolo, computador e porta.");
         if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Informe o token criado nas permissões do API Server do Holyrics.");
         var url = new Uri(root, "api/" + action + "?token=" + Uri.EscapeDataString(token));
-        using var content = new StringContent(JsonSerializer.Serialize(parameters), Encoding.UTF8, "application/json");
-        using var response = await _http.PostAsync(url, content, ct);
-        response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync(ct);
-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
-        var envelope = doc.RootElement;
-        if (String(envelope, "status") != "ok")
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(8));
+        try
         {
-            var message = envelope.TryGetProperty("error", out var error) ? error.ToString() : "Resposta desconhecida";
-            throw new InvalidOperationException("Holyrics: " + message);
+            using var request = new HttpRequestMessage(HttpMethod.Post, url)
+            { Content = new StringContent(JsonSerializer.Serialize(parameters), Encoding.UTF8, "application/json") };
+            using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
+            if (response.RequestMessage?.RequestUri is { } finalUri && finalUri != url)
+                throw new InvalidDataException("O Holyrics redirecionou a conexão. Confira o endereço do API Server.");
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                throw new InvalidOperationException("O Holyrics não autorizou a leitura. Confira o token e as permissões GetSongs e GetLyrics.");
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"O API Server do Holyrics respondeu HTTP {(int)response.StatusCode}. Confira o endereço e a porta.", null, response.StatusCode);
+            if (response.Content.Headers.ContentLength > MaximumResponseBytes) throw new InvalidDataException("A resposta do Holyrics excedeu 32 MB.");
+            await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token).ConfigureAwait(false);
+            using var buffer = new MemoryStream();
+            var bytes = new byte[32 * 1024];
+            int read;
+            while ((read = await stream.ReadAsync(bytes, timeout.Token).ConfigureAwait(false)) > 0)
+            {
+                if (buffer.Length + read > MaximumResponseBytes) throw new InvalidDataException("A resposta do Holyrics excedeu 32 MB.");
+                buffer.Write(bytes, 0, read);
+            }
+            using var doc = JsonDocument.Parse(buffer.ToArray(), new JsonDocumentOptions { MaxDepth = 64 });
+            var envelope = doc.RootElement;
+            if (envelope.ValueKind != JsonValueKind.Object) throw new InvalidDataException("O API Server retornou uma resposta inválida.");
+            if (String(envelope, "status") != "ok")
+                throw new InvalidOperationException("O Holyrics não liberou esta consulta. Confira o token, as permissões GetSongs/GetLyrics e se o API Server está ativado.");
+            return envelope.TryGetProperty("data", out var result) ? result.Clone() : default;
         }
-        return envelope.TryGetProperty("data", out var result) ? result.Clone() : default;
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw new OperationCanceledException(ct); }
+        catch (OperationCanceledException) { throw new TimeoutException("O Holyrics demorou para responder. Confira se está aberto, com o API Server ativo e acessível na rede."); }
+        catch (HttpRequestException ex) { throw new HttpRequestException(ex.StatusCode.HasValue ? $"Não foi possível consultar o Holyrics (HTTP {(int)ex.StatusCode.Value})." : "Não foi possível conectar ao Holyrics. Confira o endereço, a porta e se o programa está aberto."); }
+        catch (IOException) { throw new IOException("A conexão com o Holyrics foi interrompida. Tente buscar a biblioteca novamente."); }
+        catch (JsonException) { throw new InvalidDataException("O API Server do Holyrics retornou JSON inválido."); }
     }
 
-    public void Dispose() => _http.Dispose();
+    public void Dispose() { if (_ownsClient) _http.Dispose(); }
 }

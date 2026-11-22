@@ -21,7 +21,7 @@ public sealed class IntegrationTests : IDisposable
     {
         using var server = new RemoteServer();
         var received = new List<(string Command, int? Index)>();
-        server.Start(FreePort(), () => new { title = "Louvor à criação", text = "Paz", index = 0, count = 2 }, (command, index) => { lock(received) received.Add((command,index)); });
+        server.Start(FreePort(), () => new { title = "Louvor à criação", text = "Paz", index = 0, count = 2 }, (command, index) => { lock(received) received.Add((command,index)); }, IPAddress.Loopback);
         using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{server.Port}"), Timeout = TimeSpan.FromSeconds(4) };
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/state")).StatusCode);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "wrong-token");
@@ -42,11 +42,11 @@ public sealed class IntegrationTests : IDisposable
     {
         using var server = new RemoteServer();
         var port = FreePort();
-        server.Start(port, () => new { title = "Paz" }, (_, _) => { });
+        server.Start(port, () => new { title = "Paz" }, (_, _) => { }, IPAddress.Loopback);
         var oldToken = server.Token;
         server.Stop();
         Assert.False(server.IsRunning);
-        server.Start(port, () => new { title = "Paz" }, (_, _) => { });
+        server.Start(port, () => new { title = "Paz" }, (_, _) => { }, IPAddress.Loopback);
         Assert.NotEqual(oldToken, server.Token);
         using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{port}") };
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oldToken);

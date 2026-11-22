@@ -208,13 +208,14 @@ public partial class MainWindow : Window
             await new ExportDialog(_slides.ToArray(),_document.Style with{},_document.SecondsPerSlide).ShowDialog(this);
         });
         Click("RemoteButton",ToggleRemote);
+        ClickAsync("DownloadApkButton",DownloadAndroidApk);
         ClickAsync("CopyRemoteButton",async()=>{var url=_remote.Urls.FirstOrDefault(u=>!u.Contains("127.0.0.1"))??_remote.Urls.FirstOrDefault();if(_remote.IsRunning&&url!=null&&Clipboard!=null){await Clipboard.SetTextAsync(url);Status("Link do controle remoto copiado");}});
         ClickAsync("HolyricsImportButton",ImportHolyrics);
         C<ToggleSwitch>("HolyricsFollowToggle").IsCheckedChanged+=async(_,_)=>
         {
             if(C<ToggleSwitch>("HolyricsFollowToggle").IsChecked==true)await FollowHolyrics();else StopFollowing();
         };
-        ClickAsync("HelpButton",()=>Message("Como operar o Worship Studio", "1. Importe letras TXT UTF-8, JSON ou OpenLyrics XML, ou crie um louvor. Separe estrofes com uma linha em branco; use [Refrão] para identificar partes.\n\n2. Um clique prepara a prévia. Projetar estrofe ou duplo clique envia ao vivo. As setas navegam na apresentação atual. Ao final, Próxima segue o roteiro do culto.\n\n3. Escolha o monitor e abra a projeção. No Windows use Win+P → Estender para usar duas telas. F11 alterna tela cheia; Esc retorna à janela.\n\n4. B alterna tela preta; L oculta apenas a letra. Imagens e vídeos são copiados para a biblioteca local. O vídeo de fundo é silencioso e se repete.\n\n5. Ajuste os efeitos e transições no painel Cena. A reação ao áudio usa a intensidade RMS do som do computador ou da entrada padrão. O pulso manual funciona sem captura.\n\n6. Ative o controle remoto em Conexões e abra o link no celular na mesma rede. Compartilhe o link apenas com operadores.\n\n7. Exporte a música selecionada em MP4 com tempo por estrofe e áudio opcional. Backup salva a biblioteca, roteiro, cena e mídia atual em um arquivo portátil.\n\nDados: " + _store.DirectoryPath));
+        ClickAsync("HelpButton",()=>Message("Como operar o Worship Studio", "1. Importe letras TXT UTF-8, JSON ou OpenLyrics XML, ou crie um louvor. Separe estrofes com uma linha em branco; use [Refrão] para identificar partes.\n\n2. Um clique prepara a prévia. Projetar estrofe ou duplo clique envia ao vivo. As setas navegam na apresentação atual. Ao final, Próxima segue o roteiro do culto.\n\n3. Escolha o monitor e abra a projeção. No Windows use Win+P → Estender para usar duas telas. F11 alterna tela cheia; Esc retorna à janela.\n\n4. B alterna tela preta; L oculta apenas a letra. Imagens e vídeos são copiados para a biblioteca local. O vídeo de fundo é silencioso e se repete.\n\n5. Ajuste os efeitos e transições no painel Cena. A reação ao áudio usa a intensidade RMS do som do computador ou da entrada padrão. O pulso manual funciona sem captura.\n\n6. Em Conexões, inicie o controle remoto. No APK Letras para culto — Controle, informe o endereço do PC e o código de seis dígitos mostrado na tela. O navegador também aceita o link completo. Compartilhe o acesso apenas com operadores.\n\n7. Exporte a música selecionada em MP4 com tempo por estrofe e áudio opcional. Backup salva a biblioteca, roteiro, cena e mídia atual em um arquivo portátil.\n\nHolyrics: em Conexões, use Baixar letras do Holyrics para buscar e selecionar músicas da biblioteca do programa instalado no PC ou na rede. As letras baixadas ficam disponíveis offline.\n\nDados: " + _store.DirectoryPath));
     }
 
     private void LoadStyleControls()
@@ -504,7 +505,7 @@ public partial class MainWindow : Window
 
     private void ToggleRemote()
     {
-        if(_remote.IsRunning){_remote.Stop();C<Button>("RemoteButton").Content="Iniciar controle remoto";C<TextBox>("RemoteAddress").Text="Controle remoto desligado";C<NumericUpDown>("RemotePortInput").IsEnabled=true;Status("Controle remoto encerrado · chave revogada");return;}
+        if(_remote.IsRunning){_remote.Stop();C<Button>("RemoteButton").Content="Iniciar controle remoto";C<TextBox>("RemoteAddress").Text="Controle remoto desligado";C<TextBox>("RemoteHostAddress").Text="";C<TextBlock>("PairingCodeLabel").Text="— — — — — —";C<TextBlock>("PairingStatusLabel").Text="Controle desligado · código e chave revogados.";C<NumericUpDown>("RemotePortInput").IsEnabled=true;Status("Controle remoto encerrado · chave revogada");return;}
         _document.RemotePort=(int)(C<NumericUpDown>("RemotePortInput").Value??8765);
         _remote.Start(_document.RemotePort,()=>Volatile.Read(ref _remoteState),(command,index)=>Dispatcher.UIThread.Post(()=>
         {
@@ -524,12 +525,40 @@ public partial class MainWindow : Window
             catch(Exception ex){BackgroundError(ex.Message);}
         }));
         C<Button>("RemoteButton").Content="Desligar controle remoto";C<TextBox>("RemoteAddress").Text=string.Join("\n\n",_remote.Urls);C<NumericUpDown>("RemotePortInput").IsEnabled=false;ScheduleSave();Status("Controle remoto ativo na rede local");
+        var url=_remote.Urls.FirstOrDefault(u=>!u.Contains("127.0.0.1"))??_remote.Urls.FirstOrDefault();
+        C<TextBox>("RemoteHostAddress").Text=url==null?"":new Uri(url).GetLeftPart(UriPartial.Authority);
+        C<TextBlock>("PairingCodeLabel").Text=_remote.PairingCode;
+        C<TextBlock>("PairingStatusLabel").Text="Válido até "+_remote.PairingExpiresAt.ToLocalTime().ToString("HH:mm")+" · para renovar, desligue e inicie novamente. Compartilhe apenas com operadores.";
     }
     private async Task ImportHolyrics()
     {
+        if(_startupError!=null){await Message("Biblioteca preservada","Resolva o erro de carregamento ou restaure um backup antes de importar novas letras.");return;}
         var button=C<Button>("HolyricsImportButton");button.IsEnabled=false;
-        try{var songs=await _holyrics.ImportLibraryAsync(C<TextBox>("HolyricsUrl").Text??"",C<TextBox>("HolyricsToken").Text??"");var count=AddImported(songs);ScheduleSave();RefreshLibrary();C<TextBlock>("HolyricsStatus").Text=$"{count} louvor(es) importado(s)";Status($"Holyrics: {count} louvor(es) importado(s)");}
+        try
+        {
+            var dialog=new HolyricsImportWindow(C<TextBox>("HolyricsUrl").Text??"",C<TextBox>("HolyricsToken").Text??"",_holyrics);
+            var songs=await dialog.ShowDialog<List<Song>?>(this);
+            if(songs==null)return;
+            C<TextBox>("HolyricsUrl").Text=dialog.BaseUrl;C<TextBox>("HolyricsToken").Text=dialog.AccessToken;
+            var count=AddImported(songs);_store.Save(_document);RefreshLibrary();
+            C<TextBlock>("HolyricsStatus").Text=$"{count} letra(s) salva(s) na biblioteca local";Status($"Holyrics: {count} letra(s) baixada(s) · disponíveis offline");
+        }
         finally{button.IsEnabled=true;}
+    }
+    private async Task DownloadAndroidApk()
+    {
+        var name=$"LetrasParaCulto-Controle-{UpdateService.CurrentVersion}.apk";
+        var packaged=Path.Combine(AppContext.BaseDirectory,name);
+        if(File.Exists(packaged))
+        {
+            var destination=await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions{Title="Salvar APK para transferir ao celular",SuggestedFileName=name,DefaultExtension="apk",FileTypeChoices=[new FilePickerFileType("Aplicativo Android"){Patterns=["*.apk"]}]});
+            if(destination==null)return;
+            File.Copy(packaged,Local(destination),true);Status("APK salvo. Transfira ao Android e abra o arquivo para instalar.");
+        }
+        else
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo($"https://github.com/JoshuaNb/Letras-para-culto/releases/download/v{UpdateService.CurrentVersion}/{name}"){UseShellExecute=true});
+        }
     }
     private async Task FollowHolyrics()
     {

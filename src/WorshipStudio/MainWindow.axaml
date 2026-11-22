@@ -141,18 +141,25 @@
      <TabItem Header="Conexões">
       <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="8,12,8,18" Spacing="12">
        <TextBlock Text="CONTROLE PELO CELULAR" Classes="caption"/>
-       <TextBlock Text="Conecte o celular ao mesmo Wi-Fi e abra um dos endereços abaixo no navegador. O link contém a chave de acesso." TextWrapping="Wrap" Foreground="{DynamicResource WsMuted}" FontSize="11"/>
+       <TextBlock Text="No APK Letras para culto — Controle, informe o endereço do PC e o código abaixo. PC e celular precisam estar na mesma rede Wi-Fi. O navegador também continua disponível pelo link completo." TextWrapping="Wrap" Foreground="{DynamicResource WsMuted}" FontSize="11"/>
        <NumericUpDown x:Name="RemotePortInput" Minimum="1024" Maximum="65535" Value="8765" FormatString="0"/>
        <Button x:Name="RemoteButton" Content="Iniciar controle remoto" Classes="primary" HorizontalAlignment="Stretch"/>
+       <Border Background="{DynamicResource WsInput}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="1" CornerRadius="5" Padding="12"><StackPanel Spacing="5">
+        <TextBlock Text="PAREAMENTO COM O APK" Classes="caption"/>
+        <TextBlock x:Name="PairingCodeLabel" Text="— — — — — —" FontSize="27" FontWeight="SemiBold" LetterSpacing="3" Foreground="{DynamicResource WsAccentLabel}"/>
+        <TextBlock x:Name="PairingStatusLabel" Text="Inicie o controle para gerar o código." Classes="muted" TextWrapping="Wrap" FontSize="10"/>
+       </StackPanel></Border>
+       <TextBox x:Name="RemoteHostAddress" IsReadOnly="True" Watermark="Endereço do PC para o APK" AutomationProperties.Name="Endereço do PC para o APK"/>
+       <Button x:Name="DownloadApkButton" Content="Baixar APK para Android…" HorizontalAlignment="Stretch"/>
        <TextBox x:Name="RemoteAddress" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="110" Text="Controle remoto desligado"/>
        <Button x:Name="CopyRemoteButton" Content="Copiar endereço"/>
        <TextBlock Text="Se o Windows solicitar, permita o acesso à rede privada. O controle usa apenas a rede local." TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource WsMuted}"/>
        <Border Height="1" Background="{DynamicResource WsBorder}" Margin="0,8"/>
        <TextBlock Text="HOLYRICS · API SERVER" Classes="caption"/>
-       <TextBlock Text="Ative o API Server no Holyrics. Informe o endereço e o token com permissão de leitura. Você pode importar a biblioteca ou acompanhar a letra projetada." TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource WsMuted}"/>
+       <TextBlock Text="Baixe letras e estrofes da biblioteca do Holyrics instalado neste PC ou na rede. Ative o API Server no Holyrics e crie um token com leitura de GetSongs e GetLyrics. Depois de importar, as letras ficam disponíveis offline." TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource WsMuted}"/>
        <TextBox x:Name="HolyricsUrl" Watermark="http://192.168.1.10:8091" Text="http://127.0.0.1:8091"/>
        <TextBox x:Name="HolyricsToken" Watermark="Token da API" PasswordChar="●"/>
-       <Button x:Name="HolyricsImportButton" Content="Importar biblioteca via API" HorizontalAlignment="Stretch"/>
+       <Button x:Name="HolyricsImportButton" Content="Baixar letras do Holyrics…" Classes="primary" HorizontalAlignment="Stretch"/>
        <ToggleSwitch x:Name="HolyricsFollowToggle" Content="Seguir apresentação"/>
        <TextBlock x:Name="HolyricsStatus" Text="Desconectado" TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource WsMuted}"/>
        <TextBlock Text="Também é possível importar TXT, JSON e OpenLyrics XML pelo botão Importar. Arquivos .hcb e .hcc não são suportados." TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource WsMuted}"/>

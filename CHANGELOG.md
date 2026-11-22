@@ -1,6 +1,25 @@
 # Histórico de mudanças
 
-O projeto é publicado como **Letras para culto**. O aplicativo e os arquivos mantêm o nome **Worship Studio**, preservando a atualização das instalações existentes. As versões 1.0 a 1.3 foram preparadas em 22/11/2026.
+O projeto é publicado como **Letras para culto**. O aplicativo e os arquivos de PC mantêm o nome **Worship Studio**, preservando a atualização das instalações existentes.
+
+## 1.4.0 — Controle Android e biblioteca do Holyrics
+
+- Adicionado **Letras para culto · Controle**, APK nativo em português brasileiro para Android 8.0 ou superior, sem conta, nuvem ou dependência de serviços Google.
+- Adicionado pareamento local com IPv4/porta do PC e código de seis dígitos válido por dez minutos. O servidor limita tentativas por endereço e globalmente; desligar o controle revoga código e token.
+- Preservada a conexão por link completo com token e o controle pelo navegador das versões anteriores.
+- Adicionados ao APK retorno da letra atual, navegação anterior/próxima, seleção direta de estrofe, ocultar letra, tela preta e pulso de efeito. A consulta pausa em segundo plano; código e token ficam somente em memória.
+- Adicionada janela **Baixar letras do Holyrics**, com catálogo da biblioteca instalada, busca por título/artista, seleção individual ou dos itens visíveis, progresso e cancelamento.
+- A importação usa a API local autorizada do Holyrics (`GetSongs`/`GetLyrics`) e adiciona apenas o lote concluído à biblioteca. As letras baixadas ficam disponíveis offline; áudio e MP3 não fazem parte dessa importação.
+- Mantidos os quatro temas, o espaço de operação, as animações e o atualizador da versão 1.3.
+- Incluídos fonte e scripts Android no ZIP completo. A distribuição 1.4 acrescenta o APK aos anexos da Release e seu hash ao manifesto SHA-256; a chave de assinatura permanece privada.
+- Incluído o APK no instalador de PC, com **Baixar APK para Android…** para salvar uma cópia offline e transferi-la ao celular.
+- Ajustado o código Android para descartar comandos ainda enfileirados quando o aplicativo entra em segundo plano.
+- Validação: **320 verificações aprovadas, zero falhas** — 130 de núcleo (93 anteriores, 18 de pareamento e 19 de Holyrics), 108 visuais, 26 da interface principal, sete da janela Holyrics, 32 Java e 17 da integração HTTP real do cliente Java do APK com o servidor e a operação de produção em Avalonia Headless.
+- APK compilado, assinado e alinhado. A integração HTTP valida o cliente e a operação do PC; não executa a Activity ou toques Android. O emulador sem hypervisor ficou indisponível e não houve operação em celular físico; testes Holyrics usam respostas controladas, sem instalação real.
+
+**Migração:** o pareamento por código requer PC 1.4.0. Versões até a 1.2 precisam da instalação manual inicial da 1.4; a 1.3 já pode buscá-la pelo atualizador. Instale o APK no Android e conecte os dispositivos à mesma rede local.
+
+[Notas da versão 1.4.0](docs/releases/v1.4.0.md) · [Controle Android](docs/CONTROLE-ANDROID.md).
 
 ## 1.3.0 — Novo espaço de operação, temas e atualizações
 
