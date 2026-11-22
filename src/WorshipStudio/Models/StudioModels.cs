@@ -15,6 +15,7 @@ public sealed record StageStyle
 {
     public string FontFamily { get; set; } = "Segoe UI";
     public double FontSize { get; set; } = 64;
+    public bool Bold { get; set; } = true;
     public string TextColor { get; set; } = "#FFFFFF";
     public string AccentColor { get; set; } = "#48DCC4";
     public string BackgroundColor { get; set; } = "#08121F";
@@ -22,6 +23,9 @@ public sealed record StageStyle
     public string? BackgroundPath { get; set; }
     public string Transition { get; set; } = "Fade";
     public double TransitionSeconds { get; set; } = .6;
+    public string LyricAnimation { get; set; } = "None";
+    public double LyricAnimationSpeed { get; set; } = 1;
+    public double LyricAnimationIntensity { get; set; } = .5;
     public double MotionSpeed { get; set; } = 1;
     public double Dim { get; set; } = .35;
     public double TextY { get; set; } = .5;

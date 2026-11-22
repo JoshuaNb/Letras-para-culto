@@ -128,6 +128,11 @@ public sealed class LibraryStore
         style.MotionSpeed = double.IsFinite(style.MotionSpeed) ? Math.Clamp(style.MotionSpeed, 0, 4) : 1;
         style.Dim = double.IsFinite(style.Dim) ? Math.Clamp(style.Dim, 0, 1) : .35;
         style.TextY = double.IsFinite(style.TextY) ? Math.Clamp(style.TextY, .1, .9) : .5;
+        style.LyricAnimationSpeed = double.IsFinite(style.LyricAnimationSpeed) ? Math.Clamp(style.LyricAnimationSpeed, .2, 3) : 1;
+        style.LyricAnimationIntensity = double.IsFinite(style.LyricAnimationIntensity) ? Math.Clamp(style.LyricAnimationIntensity, 0, 1) : .5;
+        if (string.IsNullOrWhiteSpace(style.FontFamily)) style.FontFamily = "Segoe UI";
+        if (style.LyricAnimation is not ("None" or "Float" or "Wave" or "Pulse" or "Breathe" or "Sway" or "Bounce" or "Glow" or "Shake")) style.LyricAnimation = "None";
+        if (style.Transition is not ("Fade" or "Slide" or "SlideDown" or "SlideLeft" or "SlideRight" or "Zoom" or "Pop" or "Rotate" or "Wipe" or "Typewriter" or "Words" or "Lines" or "Cut")) style.Transition = "Fade";
         if (!double.IsFinite(document.SecondsPerSlide)) document.SecondsPerSlide=8;
         document.SecondsPerSlide = Math.Clamp(document.SecondsPerSlide, 1, 120);
     }

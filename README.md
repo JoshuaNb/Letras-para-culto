@@ -1,12 +1,12 @@
-Projeto GitHub: Letras para culto. O executável desta versão conserva o nome Worship Studio. Para compilar com ferramentas nativas e evidências, utilize o ZIP completo anexado à Release v1.0.0.
+Projeto GitHub: Letras para culto. O executável desta versão conserva o nome Worship Studio. Para compilar com ferramentas nativas e evidências, utilize o ZIP completo anexado à Release v1.1.0.
 
-# Worship Studio 1.0.0
+# Worship Studio 1.1.0
 
 Aplicativo desktop em C#/.NET 10 e Avalonia UI para preparar e projetar letras de louvores. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
 
 ## Instalação e primeira projeção
 
-1. Execute `WorshipStudio-Setup-1.0.0.exe` no Windows 11 x64. A instalação é por usuário, sem exigir administrador. .NET, LibVLC e FFmpeg necessários já acompanham o pacote.
+1. Execute `WorshipStudio-Setup-1.1.0.exe` no Windows 11 x64. A instalação é por usuário, sem exigir administrador. .NET, LibVLC e FFmpeg necessários já acompanham o pacote. A atualização preserva a biblioteca existente.
 2. Para dois monitores, escolha **Estender estes vídeos** nas configurações de vídeo do Windows. Ligue o projetor antes de iniciar.
 3. Abra Worship Studio. Na aba **Cena**, escolha o monitor de saída.
 4. Clique **Abrir projeção**. A janela de operação permanece independente da projeção. A janela de saída pode funcionar no mesmo monitor quando não há segunda tela.
@@ -35,11 +35,43 @@ O campo de busca procura título, autoria e letra. **Adicionar ao roteiro** mont
 
 ## Cenas, animações e mídia
 
-A aba **Cena** contém os controles reais do renderizador: fundo procedural, imagem/vídeo local, velocidade, escurecimento, cor do efeito, cor de fundo, fonte, tamanho da letra, cor da letra, posição vertical, tipo e duração de transição. As alterações atualizam o renderizador em tempo real. **Testar transição na prévia** repete a animação sem alterar a saída ao vivo. **Reiniciar vídeo do fundo** reinicia a mídia nas superfícies de prévia e projeção. **Salvar cena** e **Carregar** permitem reutilizar os parâmetros.
+A aba **Cena** contém os controles reais do renderizador: fundo procedural, imagem/vídeo local, velocidade, escurecimento, cores, fonte, negrito, tamanho, posição e animações das letras. As alterações atualizam a prévia e a projeção em tempo real. **Reiniciar vídeo do fundo** reinicia a mídia nas superfícies de prévia e projeção. **Salvar cena** e **Carregar** permitem reutilizar os parâmetros.
 
 Os efeitos procedurais usam geometria em perspectiva e animação contínua. O editor desta versão ajusta parâmetros e transições; não possui linha do tempo de keyframes nem importação de modelos 3D. Imagens e vídeos escolhidos são copiados para a pasta de mídia da biblioteca. A reprodução de fundo usa LibVLC local, em loop e sem som, para preservar o áudio do culto.
 
 O Avalonia usa Skia/ANGLE no Windows com aceleração gráfica e fallback de software. O LibVLC solicita decodificação por hardware quando disponível. O uso efetivo da GPU depende do driver e do formato da mídia. A versão não inclui um benchmark certificado no Ryzen 5 5600G/RX 6600.
+
+## Cores, fontes e negrito
+
+Em **Cena → Tipografia da letra**, escolha uma fonte na lista de fontes instaladas no computador. Cada nome é mostrado na própria fonte; a amostra **Adoração · Aa Bb Cc** permite conferir a seleção. A versão 1.1 corrige o cache que impedia a troca da fonte de aparecer quando a estrofe permanecia a mesma. A escolha também vale para a janela de projeção e para o MP4.
+
+Marque **Negrito** para usar o peso 700; desmarque para usar o peso normal 400. O tamanho da fonte continua expresso em pixels de referência para saída 1080p.
+
+Clique na amostra de **Cor da letra** para abrir o seletor visual. Arraste no quadro de saturação e luminosidade, ajuste o matiz, use os controles Vermelho/Verde/Azul ou escolha uma cor da paleta. Também é possível digitar um código HEX, como `#FFD166`. As mudanças aparecem ao vivo enquanto o seletor está aberto. **Aplicar cor** mantém a escolha; **Cancelar**, Esc ou fechar a janela restaura a cor anterior. Códigos HEX inválidos não são aplicados. **Cor do efeito** e **Cor do fundo** usam o mesmo seletor.
+
+## Animações das letras
+
+Combine uma **Entrada da letra**, executada quando o texto muda, com uma **Animação contínua**, mantida enquanto a estrofe permanece visível. A animação das letras tem velocidade própria, independente do movimento do fundo, e também aparece no vídeo exportado.
+
+| Entrada da letra | Comportamento |
+| --- | --- |
+| Dissolver | A letra aparece gradualmente |
+| Subir / Descer | Entrada com deslocamento vertical |
+| Entrar pela esquerda / direita | Entrada com deslocamento horizontal |
+| Aproximar | Entrada por escala |
+| Salto com aproximação | Escala com ressalto |
+| Girar e aparecer | Rotação curta com aparecimento |
+| Revelar da esquerda | Revelação progressiva pela área de recorte |
+| Máquina de escrever | Revelação de caracteres com suporte a acentos e Unicode |
+| Palavra por palavra | Revelação de palavras |
+| Linha por linha | Revelação de linhas |
+| Corte direto | Exibição imediata, sem animação de entrada |
+
+São 12 entradas animadas e a opção Corte direto. Ajuste a **Duração da transição** entre 0 e 3 segundos; zero exibe a letra completa imediatamente. Escolher outra entrada já a reproduz na prévia. **Testar entrada na prévia** permite repetir o teste sem mudar a saída ao vivo.
+
+Os oito efeitos contínuos são **Flutuar**, **Onda nas linhas**, **Pulsar**, **Respiração**, **Balançar**, **Saltar**, **Brilho pulsante** e **Vibração suave**. Escolha **Sem animação contínua** para deixar o texto parado. **Velocidade da letra** varia de 0,2× a 3×; **Intensidade da animação** varia de 0 a 100%. A intensidade zero mantém a letra estável.
+
+Fonte, negrito, cores e parâmetros de animação são preservados na biblioteca, nas cenas JSON e no backup `.wstudio`. Cenas antigas recebem negrito ligado e nenhuma animação contínua, preservando a leitura sem movimento adicional.
 
 ## Reação ao áudio
 
@@ -99,7 +131,13 @@ Requer SDK .NET 10 x64 para desenvolvimento e Inno Setup 6 para reconstruir o in
 .\build.ps1 -SkipInstaller
 ```
 
-A primeira restauração de pacotes de desenvolvimento usa NuGet. Isso não é necessário na operação do aplicativo pronto. `build.ps1` executa os testes, publica em `app\win-x64` e compila o instalador. Os testes incluem biblioteca, importação, contrato Holyrics, autenticação remota e geração/decodificação de MP4 real.
+A primeira restauração de pacotes de desenvolvimento usa NuGet. Isso não é necessário na operação do aplicativo pronto. `build.ps1` executa os testes de operação e as regressões visuais, publica em `app\win-x64` e compila o instalador. Os testes incluem biblioteca, importação, contrato Holyrics, autenticação remota, geração/decodificação de MP4 real e comparação dos pixels de fontes, pesos, cores e animações.
+
+Para executar apenas as verificações visuais de tipografia:
+
+```powershell
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.1
+```
 
 Consulte `VERIFICACAO.md` para resultados observados e limites da validação. Nenhum vídeo de referência chegou acessível nesta conversa; a aparência foi desenvolvida a partir dos requisitos escritos.
 

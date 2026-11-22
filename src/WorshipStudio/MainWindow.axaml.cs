@@ -40,7 +40,9 @@ public partial class MainWindow : Window
     private object _remoteState = new { title = "Worship Studio", text = "", index=0, count=0, slides=Array.Empty<object>() };
     private CancellationTokenSource? _followCts;
     private readonly string[] _backgrounds = ["Aurora", "Tunnel", "Particles", "Solid", "Image", "Video"];
-    private readonly string[] _transitions = ["Fade", "Slide", "Zoom", "Typewriter", "Cut"];
+    private readonly string[] _transitions = ["Fade", "Slide", "SlideDown", "SlideLeft", "SlideRight", "Zoom", "Pop", "Rotate", "Wipe", "Typewriter", "Words", "Lines", "Cut"];
+    private readonly string[] _letterAnimations = ["None", "Float", "Wave", "Pulse", "Breathe", "Sway", "Bounce", "Glow", "Shake"];
+    private List<string> _availableFonts = [];
     private string? _startupError;
     private string _gpuStatus = "Renderização em verificação";
 
@@ -101,14 +103,19 @@ public partial class MainWindow : Window
     private void ConfigureControls()
     {
         C<ComboBox>("BackgroundCombo").ItemsSource = new[] { "Aurora fluida", "Túnel 3D", "Partículas 3D", "Cor sólida", "Imagem local", "Vídeo local" };
-        C<ComboBox>("TransitionCombo").ItemsSource = new[] { "Dissolver", "Deslizar", "Aproximar", "Máquina de escrever", "Corte direto" };
-        C<ComboBox>("FontCombo").ItemsSource = new[] { "Segoe UI", "Arial", "Verdana", "Georgia", "Tahoma", "Trebuchet MS", "Consolas" };
+        C<ComboBox>("TransitionCombo").ItemsSource = new[] { "Dissolver", "Subir", "Descer", "Entrar pela esquerda", "Entrar pela direita", "Aproximar", "Salto com aproximação", "Girar e aparecer", "Revelar da esquerda", "Máquina de escrever", "Palavra por palavra", "Linha por linha", "Corte direto" };
+        C<ComboBox>("LetterAnimationCombo").ItemsSource = new[] { "Sem animação contínua", "Flutuar", "Onda nas linhas", "Pulsar", "Respiração", "Balançar", "Saltar", "Brilho pulsante", "Vibração suave" };
+        _availableFonts=FontManager.Current.SystemFonts.Select(f=>f.Name).Where(n=>!string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(n=>n,StringComparer.CurrentCultureIgnoreCase).ToList();
+        if(_availableFonts.Count==0)_availableFonts.Add("Segoe UI");
+        C<ComboBox>("FontCombo").ItemsSource = _availableFonts;
         LoadStyleControls();
         C<NumericUpDown>("RemotePortInput").Value = _document.RemotePort;
-        foreach (var name in new[] { "BackgroundCombo", "TransitionCombo", "FontCombo" }) C<ComboBox>(name).SelectionChanged += (_,_)=>ChangeStyle();
-        foreach (var name in new[] { "DimSlider", "SpeedSlider", "DurationSlider", "TextYSlider" }) C<Slider>(name).PropertyChanged += (_,e)=>{if(e.Property==Slider.ValueProperty)ChangeStyle();};
+        foreach (var name in new[] { "BackgroundCombo", "FontCombo", "LetterAnimationCombo" }) C<ComboBox>(name).SelectionChanged += (_,_)=>ChangeStyle();
+        C<ComboBox>("TransitionCombo").SelectionChanged+=(_,_)=>{if(!_loading){ChangeStyle();_preview.ReplayTransition();}};
+        C<CheckBox>("BoldCheck").IsCheckedChanged+=(_,_)=>ChangeStyle();
+        foreach (var name in new[] { "DimSlider", "SpeedSlider", "DurationSlider", "TextYSlider", "LetterSpeedSlider", "LetterIntensitySlider" }) C<Slider>(name).PropertyChanged += (_,e)=>{if(e.Property==Slider.ValueProperty)ChangeStyle();};
         C<NumericUpDown>("FontSizeInput").ValueChanged += (_,_)=>ChangeStyle();
-        foreach (var name in new[]{"AccentBox","BackgroundColorBox","TextColorBox"}) C<TextBox>(name).LostFocus+=(_,_)=>ChangeStyle();
+        foreach (var name in new[]{"AccentField","BackgroundColorField","TextColorField"}) C<ColorField>(name).ColorChanged+=()=>ChangeStyle();
         C<Slider>("GainSlider").PropertyChanged += (_,e)=> {if(e.Property==Slider.ValueProperty)_audio.Gain=C<Slider>("GainSlider").Value;};
         C<ToggleSwitch>("AudioToggle").IsCheckedChanged += async (_,_)=> await Run(()=>{ConfigureAudio(); return Task.CompletedTask;});
         C<ComboBox>("AudioSourceCombo").SelectionChanged += async (_,_)=>{if(C<ToggleSwitch>("AudioToggle").IsChecked==true)await Run(()=>{ConfigureAudio();return Task.CompletedTask;});};
@@ -171,26 +178,25 @@ public partial class MainWindow : Window
         var s=_document.Style;
         C<ComboBox>("BackgroundCombo").SelectedIndex=Math.Max(0,Array.IndexOf(_backgrounds,s.BackgroundMode));
         C<ComboBox>("TransitionCombo").SelectedIndex=Math.Max(0,Array.IndexOf(_transitions,s.Transition));
-        C<ComboBox>("FontCombo").SelectedItem=s.FontFamily;
-        if(C<ComboBox>("FontCombo").SelectedIndex<0)C<ComboBox>("FontCombo").SelectedIndex=0;
+        var font=_availableFonts.FirstOrDefault(n=>n.Equals(s.FontFamily,StringComparison.OrdinalIgnoreCase))??_availableFonts.FirstOrDefault(n=>n.Equals("Segoe UI",StringComparison.OrdinalIgnoreCase))??_availableFonts[0];
+        C<ComboBox>("FontCombo").SelectedItem=font;
+        if(s.FontFamily!=font){_document.Style=s=s with{FontFamily=font};}
         C<NumericUpDown>("FontSizeInput").Value=(decimal)s.FontSize;
-        C<TextBox>("AccentBox").Text=s.AccentColor;C<TextBox>("BackgroundColorBox").Text=s.BackgroundColor;C<TextBox>("TextColorBox").Text=s.TextColor;
+        C<CheckBox>("BoldCheck").IsChecked=s.Bold;
+        C<ColorField>("AccentField").Value=s.AccentColor;C<ColorField>("BackgroundColorField").Value=s.BackgroundColor;C<ColorField>("TextColorField").Value=s.TextColor;
+        C<ComboBox>("LetterAnimationCombo").SelectedIndex=Math.Max(0,Array.IndexOf(_letterAnimations,s.LyricAnimation));
+        C<Slider>("LetterSpeedSlider").Value=s.LyricAnimationSpeed;C<Slider>("LetterIntensitySlider").Value=s.LyricAnimationIntensity;
         C<Slider>("DimSlider").Value=s.Dim;C<Slider>("SpeedSlider").Value=s.MotionSpeed;C<Slider>("DurationSlider").Value=s.TransitionSeconds;C<Slider>("TextYSlider").Value=s.TextY;
         C<TextBlock>("DimValue").Text=$"{s.Dim:P0}";C<TextBlock>("DurationValue").Text=$"{s.TransitionSeconds:0.0}s";
         C<TextBlock>("MediaLabel").Text=string.IsNullOrEmpty(s.BackgroundPath)?"Efeito procedural · sem arquivo externo":Path.GetFileName(s.BackgroundPath);
         C<Button>("RestartVideoButton").IsEnabled=s.BackgroundMode=="Video";
+        UpdateTypographySample();
         _loading=old;
     }
 
     private void ChangeStyle()
     {
         if(_loading)return;
-        string ReadColor(string name,string fallback)
-        {
-            var text=C<TextBox>(name).Text?.Trim();
-            if(Color.TryParse(text,out _))return text!;
-            C<TextBox>(name).Text=fallback;Status("Use uma cor válida, por exemplo #48DCC4");return fallback;
-        }
         var current=_document.Style;
         _document.Style=current with
         {
@@ -198,12 +204,29 @@ public partial class MainWindow : Window
             Transition=_transitions[Math.Clamp(C<ComboBox>("TransitionCombo").SelectedIndex,0,_transitions.Length-1)],
             FontFamily=C<ComboBox>("FontCombo").SelectedItem as string??"Segoe UI",
             FontSize=(double)(C<NumericUpDown>("FontSizeInput").Value??64),
-            AccentColor=ReadColor("AccentBox",current.AccentColor),BackgroundColor=ReadColor("BackgroundColorBox",current.BackgroundColor),TextColor=ReadColor("TextColorBox",current.TextColor),
+            Bold=C<CheckBox>("BoldCheck").IsChecked==true,
+            AccentColor=C<ColorField>("AccentField").Value,BackgroundColor=C<ColorField>("BackgroundColorField").Value,TextColor=C<ColorField>("TextColorField").Value,
+            LyricAnimation=_letterAnimations[Math.Clamp(C<ComboBox>("LetterAnimationCombo").SelectedIndex,0,_letterAnimations.Length-1)],
+            LyricAnimationSpeed=C<Slider>("LetterSpeedSlider").Value,LyricAnimationIntensity=C<Slider>("LetterIntensitySlider").Value,
             Dim=C<Slider>("DimSlider").Value,MotionSpeed=C<Slider>("SpeedSlider").Value,TransitionSeconds=C<Slider>("DurationSlider").Value,TextY=C<Slider>("TextYSlider").Value
         };
         C<TextBlock>("DimValue").Text=$"{_document.Style.Dim:P0}";C<TextBlock>("DurationValue").Text=$"{_document.Style.TransitionSeconds:0.0}s";
         C<Button>("RestartVideoButton").IsEnabled=_document.Style.BackgroundMode=="Video";
+        UpdateTypographySample();
         RenderFrames();ScheduleSave();
+    }
+
+    private void UpdateTypographySample()
+    {
+        var style=_document.Style;
+        var sample=C<TextBlock>("FontSample");
+        sample.FontFamily=new FontFamily(style.FontFamily);
+        sample.FontWeight=style.Bold?FontWeight.Bold:FontWeight.Normal;
+        sample.Foreground=new SolidColorBrush(Color.TryParse(style.TextColor,out var color)?color:Colors.White);
+        C<TextBlock>("LetterSpeedValue").Text=$"{style.LyricAnimationSpeed:0.0}×";
+        C<TextBlock>("LetterIntensityValue").Text=$"{style.LyricAnimationIntensity:P0}";
+        var animated=style.LyricAnimation!="None";
+        C<Slider>("LetterSpeedSlider").IsEnabled=animated;C<Slider>("LetterIntensitySlider").IsEnabled=animated;
     }
 
     private void RefreshLibrary(Guid? select=null)

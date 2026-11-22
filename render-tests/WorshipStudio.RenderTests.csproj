@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RendererSource Condition="'$(RendererSource)' == ''">../src/WorshipStudio/Controls/StageRenderer.cs</RendererSource>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Skia" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <!-- These are the shipped files, linked rather than copied or reimplemented. -->
+    <Compile Include="../src/WorshipStudio/Models/StudioModels.cs" Link="StudioModels.cs" />
+    <Compile Include="$(RendererSource)" Link="StageRenderer.cs" />
+    <Compile Include="../src/WorshipStudio/Controls/ColorField.cs" Link="ColorField.cs" />
+  </ItemGroup>
+</Project>

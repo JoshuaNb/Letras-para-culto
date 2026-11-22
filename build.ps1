@@ -21,6 +21,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao restaurar dependências.' }
 if (-not $SkipTests) {
     & $DotnetPath test $taskTests -c Release --logger 'trx;LogFileName=verification.trx'
     if ($LASTEXITCODE -ne 0) { throw 'Os testes falharam. O pacote não foi publicado.' }
+    & $DotnetPath run --project (Join-Path $taskProjectRoot 'render-tests\WorshipStudio.RenderTests.csproj') -c Release -- --output (Join-Path $taskProjectRoot 'test-evidence\typography-1.1')
+    if ($LASTEXITCODE -ne 0) { throw 'Os testes visuais de letras falharam. O pacote não foi publicado.' }
 }
 & $DotnetPath publish $taskProject -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o $taskPublish
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao publicar.' }

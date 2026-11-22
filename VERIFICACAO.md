@@ -1,4 +1,4 @@
-# Verificação — Worship Studio 1.0.0
+# Verificação — Worship Studio 1.1.0
 
 Data: 22/11/2026, fuso America/Sao_Paulo. Este relatório distingue testes observados de capacidades implementadas que ainda dependem de validação com os equipamentos da igreja.
 
@@ -12,7 +12,48 @@ Data: 22/11/2026, fuso America/Sao_Paulo. Este relatório distingue testes obser
 
 Inventário legível por máquina: `test-evidence/environment.json`. A publicação é self-contained win-x64 e inclui o runtime; o usuário final não precisa do SDK.
 
-## Testes automatizados
+## Tipografia e animações — atualização 1.1
+
+A versão 1.1 foi compilada em Release sem erros nem avisos. A correção de fonte usa uma chave de cache que distingue explicitamente família, peso, estilo e largura da fonte, em vez da representação genérica do objeto `Typeface`. A regressão visual troca a fonte na mesma estrofe e no mesmo renderizador, de forma que reutilizar indevidamente o texto da fonte anterior seja detectado.
+
+**Resultado atual: 30 testes de operação aprovados, 0 falhas, 0 ignorados, e 29 verificações visuais aprovadas, 0 falhas.** O registro dos testes é `test-evidence/verification-1.1.trx`; o resumo visual e os quadros PNG estão em `test-evidence/typography-1.1/`.
+
+```powershell
+dotnet test tests/WorshipStudio.Tests.csproj -c Release --logger 'trx;LogFileName=verification-1.1.trx'
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.1
+```
+
+| Regressão da atualização | Evidência observada |
+| --- | --- |
+| Troca de fonte | A mesma estrofe produz pixels distintos para Segoe UI, Georgia e Consolas sem reiniciar o renderizador |
+| Negrito | Alternar peso normal 400 e negrito 700 muda os pixels e a área ocupada pelos traços |
+| Cor da letra | Vermelho e azul alteram imediatamente os pixels do texto |
+| Amostra visual de cor | Alterar `ColorField.Value` atualiza a amostra renderizada e emite um evento por mudança efetiva |
+| Entradas | As 12 entradas animadas evoluem em tempos determinados e terminam com a letra completa |
+| Duração zero | A letra completa aparece no primeiro quadro ao vivo quando a duração é zero |
+| Movimento contínuo | Os oito efeitos variam com o tempo mesmo com fundo parado; Sem animação permanece estável |
+| Velocidade e intensidade | Alterar esses parâmetros modifica o movimento escolhido; intensidade zero estabiliza o texto |
+| Unicode e segurança de leitura | Acentos e estrofe extensa permanecem dentro do quadro; letra oculta e tela preta prevalecem sobre os efeitos |
+| Persistência | Fonte, negrito, cor e animações sobrevivem à biblioteca, cena JSON e backup/restauração |
+| Compatibilidade | Cenas antigas mantêm fonte/cor e recebem negrito ligado, animação contínua None, velocidade 1 e intensidade 0,5 |
+
+As verificações visuais usam os arquivos de produção do renderizador em Avalonia Headless com pixels reais do Skia. Elas amostram o mesmo caminho de desenho usado na projeção e na captura de quadros para MP4; não medem FPS nem substituem um projetor físico. `build.ps1` executa essa suíte antes de publicar.
+
+Na interface real da atualização, foram observados os seguintes fluxos:
+
+| Operação manual na versão 1.1 | Resultado |
+| --- | --- |
+| Fonte Segoe UI → Palatino Linotype | A letra passou a apresentar a aparência serifada da fonte escolhida |
+| Alternar Negrito | A espessura do texto mudou entre os pesos normal e negrito |
+| Cor pela paleta | Escolher amarelo atualizou a prévia enquanto o seletor permanecia aberto |
+| Cancelar cor com Esc | A cor branca anterior foi restaurada |
+| Cor HEX e Aplicar | Digitar `#FFD166` e clicar Aplicar cor fechou o seletor e manteve a letra dourada na prévia |
+| Botões do seletor | Aplicar cor e Cancelar permaneceram visíveis no rodapé |
+| Animação contínua | Selecionar Onda nas linhas habilitou seus controles e animou a letra na prévia |
+
+O empacotamento 1.1 foi validado com identidade de instalação isolada, conforme descrito no fim deste relatório.
+
+## Testes de operação — base preservada
 
 Comando executado sobre o projeto entregue:
 
@@ -20,7 +61,7 @@ Comando executado sobre o projeto entregue:
 dotnet test tests\WorshipStudio.Tests.csproj -c Release --logger 'trx;LogFileName=verification.trx'
 ```
 
-**Resultado observado: 27 aprovados, 0 falhas, 0 ignorados.** Registro: `test-evidence/verification.trx`.
+Na versão 1.0, o resultado foi **27 aprovados, 0 falhas, 0 ignorados**, com registro em `test-evidence/verification.trx`. A suíte atual passou novamente com **30 aprovados**, incluindo as três novas regressões de persistência de tipografia; o registro atual é `test-evidence/verification-1.1.trx`.
 
 | Área | Verificação efetiva | Resultado |
 | --- | --- | --- |
@@ -41,9 +82,9 @@ dotnet test tests\WorshipStudio.Tests.csproj -c Release --logger 'trx;LogFileNam
 
 Os testes da API Holyrics usam um servidor local controlado. Uma instalação real do Holyrics e suas permissões não foram utilizadas; a interoperabilidade com essa instalação deve ser conferida antes do uso em culto.
 
-## Verificação visual e operação
+## Verificação visual e operação — base 1.0
 
-O aplicativo compilado foi aberto e operado na sessão Windows, com inspeção visual das janelas reais.
+O aplicativo 1.0 foi aberto e operado na sessão Windows, com inspeção visual das janelas reais. Os ajustes de tipografia e as verificações da atualização 1.1 estão descritos na seção anterior.
 
 | Fluxo observado | Resultado |
 | --- | --- |
@@ -72,7 +113,7 @@ Evidência: `test-evidence/audio-smoke.json`. O código de captura, cálculo RMS
 ## Escopo e limites da versão
 
 - O painel prepara letras sem substituir automaticamente o slide ao vivo. Projeção e painel têm janelas independentes; a saída pode ser posicionada na tela escolhida.
-- O editor ajusta fonte, cores, posição, velocidade e transições e permite salvar cenas. Não há linha do tempo de keyframes ou importação de modelos 3D; os efeitos são procedurais com geometria em perspectiva.
+- O editor ajusta fonte, negrito, cores, posição, 12 entradas animadas e oito efeitos contínuos, além das opções sem animação. Os parâmetros podem ser salvos em cenas. Não há linha do tempo de keyframes ou importação de modelos 3D; os efeitos de fundo são procedurais com geometria em perspectiva.
 - A sincronização usa amplitude/RMS, sem estimativa automática de BPM ou alinhamento de sílabas.
 - A exportação gera as estrofes do louvor selecionado com duração fixa por estrofe e áudio local opcional. Não grava a sessão de operação ao vivo.
 - GPU: Avalonia/Skia/ANGLE e decodificação LibVLC por hardware quando disponível, com fallback. Não foi medido um perfil de FPS contínuo/latência sob carga de culto com duas telas.
@@ -83,7 +124,25 @@ Evidência: `test-evidence/audio-smoke.json`. O código de captura, cálculo RMS
 
 As ferramentas nativas são distribuídas sem modificações, com licenças, configuração e referências de origem. O arquivo original FFmpeg LGPL foi conferido por SHA256 com o digest da release GitHub. Inno Setup foi obtido do site oficial e teve assinatura Authenticode válida, publicada por Pyrsys B.V.
 
-A instalação silenciosa por usuário foi executada em uma pasta de teste. O executável instalado abriu a janela de operação, carregou o CoreCLR do próprio pacote com a descoberta externa do .NET desativada, persistiu a biblioteca e terminou normalmente. Evidências: `test-evidence/setup-install.log` e `test-evidence/installed-app-smoke.json`.
+### Validação da versão 1.1
+
+O instalador de teste foi compilado com o mesmo script, versão 1.1.0 e arquivos publicados da distribuição. Somente a identidade de instalação e a pasta de saída do pacote foram substituídas para isolar o teste e preservar uma instalação existente do usuário. O instalador de distribuição mantém a identidade padrão para atualizar a versão anterior.
+
+| Verificação do pacote 1.1 | Resultado |
+| --- | --- |
+| Instalação silenciosa por usuário | Código de saída 0 |
+| Arquivo instalado | Hash da assembly instalado igual ao da publicação final |
+| Runtime independente | CoreCLR carregado da própria pasta de instalação, com descoberta externa do .NET desativada |
+| Inicialização | Processo em execução e janela Worship Studio — Operação identificada |
+| Dependências locais | LibVLC e FFmpeg presentes na instalação |
+| Desinstalação isolada | Código de saída 0; aplicativo e registro de teste removidos |
+| Preservação da instalação existente | Instalação do usuário permaneceu inalterada |
+
+Evidências: `test-evidence/installer-verification-1.1.json`, `test-evidence/setup-install-1.1.log` e `test-evidence/setup-uninstall-1.1.log`. O teste de inicialização desta versão foi encerrado por gerenciamento do processo.
+
+### Histórico da versão 1.0
+
+A instalação silenciosa por usuário da versão 1.0 foi executada em uma pasta de teste. O executável instalado abriu a janela de operação, carregou o CoreCLR do próprio pacote com a descoberta externa do .NET desativada, persistiu a biblioteca e terminou normalmente. Evidências: `test-evidence/setup-install.log` e `test-evidence/installed-app-smoke.json`.
 
 A desinstalação terminou com código 0. A pasta do aplicativo e seu registro de desinstalação foram removidos; a biblioteca de teste foi preservada. Evidências: `test-evidence/setup-uninstall.log` e `test-evidence/uninstall-result.json`. Não é necessária uma instalação prévia do .NET para usar o executável distribuído.
 

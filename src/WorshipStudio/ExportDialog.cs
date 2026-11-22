@@ -217,7 +217,7 @@ public sealed class ExportDialog : Window
                         Revision = index
                     });
                     using var bitmap = renderer.Capture(width, height, totalTime,
-                        _style.Transition == "Cut" ? 1 : Math.Clamp(localTime / Math.Max(.05, _style.TransitionSeconds), 0, 1));
+                        _style.Transition == "Cut" || _style.TransitionSeconds <= 0 ? 1 : Math.Clamp(localTime / _style.TransitionSeconds, 0, 1));
                     using var memory = new MemoryStream();
                     bitmap.Save(memory);
                     return memory.ToArray();

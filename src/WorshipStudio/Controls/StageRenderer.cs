@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Media.TextFormatting;
 using Avalonia.Threading;
 using WorshipStudio.Models;
 
@@ -26,7 +28,11 @@ public sealed class StageRenderer : Control, IDisposable
     private double? _fixedTime;
     private double? _fixedTransition;
     private bool _disposed;
-    private readonly Dictionary<string, FormattedText> _textCache = new();
+    private readonly Dictionary<TextCacheKey, TextLayout> _textCache = new();
+    private readonly Dictionary<(string Family, bool Bold), Typeface> _typefaces = new();
+    private static readonly Regex WordPattern = new(@"\S+\s*", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private readonly record struct TextCacheKey(string Text, string Family, object? AssetKey,
+        FontStyle Style, FontWeight Weight, FontStretch Stretch, double Size, double Width, Color Color);
 
     /// <summary>True only for the transparent native video overlay.</summary>
     public bool VideoOverlay { get; set; }
@@ -47,9 +53,12 @@ public sealed class StageRenderer : Control, IDisposable
     public void Update(StageFrame frame)
     {
         if (_disposed) return;
-        if (!string.Equals(_text, frame.Text, StringComparison.Ordinal))
+        if (_frame.Style.FontFamily != frame.Style.FontFamily || _frame.Style.Bold != frame.Style.Bold ||
+            _frame.Style.FontSize != frame.Style.FontSize || _frame.Style.TextColor != frame.Style.TextColor)
+            ClearTextCache();
+        if (!string.Equals(_text, frame.Text, StringComparison.Ordinal) || frame.Revision != _frame.Revision)
         {
-            _previousText = _text;
+            _previousText = string.IsNullOrEmpty(frame.PreviousText) ? _text : frame.PreviousText;
             _text = frame.Text ?? "";
             _changedAt = _clock.Elapsed.TotalSeconds;
         }
@@ -115,6 +124,8 @@ public sealed class StageRenderer : Control, IDisposable
     public override void Render(DrawingContext context)
     {
         if (Bounds.Width <= 1 || Bounds.Height <= 1) return;
+        // Dispose between frames, never while a drawing operation still uses a cached layout.
+        if (_textCache.Count > 220) ClearTextCache();
         var rect = new Rect(Bounds.Size);
         using var clip = context.PushClip(rect);
         if (_frame.Blackout)
@@ -153,28 +164,61 @@ public sealed class StageRenderer : Control, IDisposable
             context.FillRectangle(new SolidColorBrush(Color.FromArgb((byte)(Math.Clamp(style.Dim, 0, .95) * 255), 0, 0, 0)), rect);
         if (_frame.HideLyrics || string.IsNullOrWhiteSpace(_text)) return;
 
-        var progress = _fixedTransition ?? Math.Clamp((_clock.Elapsed.TotalSeconds - _changedAt) /
-            Math.Max(.05, style.TransitionSeconds), 0, 1);
-        var eased = 1 - Math.Pow(1 - progress, 3);
+        var progress = _fixedTransition ?? (style.TransitionSeconds <= 0 ? 1 :
+            Math.Clamp((_clock.Elapsed.TotalSeconds - _changedAt) / style.TransitionSeconds, 0, 1));
+        progress = Math.Clamp(progress, 0, 1);
+        var eased = EaseOut(progress);
         var transition = style.Transition;
-        if (progress < 1 && transition != "Cut" && transition != "Typewriter" && _previousText.Length > 0)
-            DrawLyrics(context, rect, _previousText, style, 1 - eased,
-                transition == "Slide" ? -eased * rect.Height * .08 : 0, 1, audio);
+        var lyricTime = (_fixedTime ?? _clock.Elapsed.TotalSeconds) * Math.Clamp(style.LyricAnimationSpeed, .1, 4);
+        if (progress < 1 && transition is not ("Cut" or "Typewriter" or "Words" or "Lines") && _previousText.Length > 0)
+            DrawLyrics(context, rect, _previousText, style, 1 - eased, 0,
+                transition == "Slide" ? -eased * rect.Height * .08 : 0, 1, 0, audio, lyricTime);
 
-        if (transition == "Typewriter" && progress < 1)
+        var x = transition switch { "SlideLeft" => -(1-eased)*rect.Width*.11, "SlideRight" => (1-eased)*rect.Width*.11, _ => 0 };
+        var y = transition switch { "Slide" => (1-eased)*rect.Height*.08, "SlideDown" => -(1-eased)*rect.Height*.08, _ => 0 };
+        var scale = transition switch
         {
-            var indices = StringInfo.ParseCombiningCharacters(_text);
-            var count = Math.Clamp((int)Math.Ceiling(indices.Length * progress), 0, indices.Length);
-            var length = count == indices.Length ? _text.Length : indices[count];
-            DrawLyrics(context, rect, _text[..length], style, 1, 0, 1, audio);
+            "Zoom" => .8 + .2 * eased,
+            "Pop" => .5 + .5 * EaseOutBack(progress),
+            "Rotate" => .85 + .15 * eased,
+            _ => 1
+        };
+        var rotation = transition == "Rotate" ? -(1-eased)*.16 : 0;
+        var opacity = transition is "Cut" or "Typewriter" or "Words" or "Lines" or "Wipe" ? 1 : eased;
+        if (transition == "Wipe" && progress < 1)
+        {
+            using var reveal = context.PushClip(new Rect(0, 0, rect.Width * eased, rect.Height));
+            DrawLyrics(context, rect, _text, style, opacity, x, y, scale, rotation, audio, lyricTime);
         }
         else
         {
-            var opacity = transition == "Cut" ? 1 : eased;
-            var offset = transition == "Slide" ? (1 - eased) * rect.Height * .08 : 0;
-            var scale = transition == "Zoom" ? .88 + .12 * eased : 1;
-            DrawLyrics(context, rect, _text, style, opacity, offset, scale, audio);
+            DrawLyrics(context, rect, _text, style, opacity, x, y, scale, rotation, audio, lyricTime,
+                transition is "Typewriter" or "Words" ? RevealLength(_text, progress, transition == "Words") : null,
+                transition == "Lines" ? progress : 1);
         }
+    }
+
+    private static double EaseOut(double value) => 1 - Math.Pow(1-value, 3);
+    private static double EaseOutBack(double value)
+    {
+        const double c1=1.70158;
+        var shifted=value-1;
+        return 1+(c1+1)*shifted*shifted*shifted+c1*shifted*shifted;
+    }
+
+    private static int RevealLength(string text, double progress, bool words)
+    {
+        if (progress <= 0) return 0;
+        if (progress >= 1) return text.Length;
+        if (words)
+        {
+            var matches=WordPattern.Matches(text);
+            var count=Math.Clamp((int)Math.Ceiling(matches.Count*progress),0,matches.Count);
+            return count==0?0:matches[count-1].Index+matches[count-1].Length;
+        }
+        var elements=StringInfo.ParseCombiningCharacters(text);
+        var revealed=Math.Clamp((int)Math.Ceiling(elements.Length*progress),0,elements.Length);
+        return revealed==elements.Length?text.Length:elements[revealed];
     }
 
     private void DrawImage(DrawingContext context, Rect rect)
@@ -291,12 +335,13 @@ public sealed class StageRenderer : Control, IDisposable
     }
 
     private void DrawLyrics(DrawingContext context, Rect rect, string value, StageStyle style,
-        double opacity, double offset, double scale, double audio)
+        double opacity, double offsetX, double offsetY, double scale, double rotation, double audio,
+        double seconds, int? revealLength = null, double lineProgress = 1)
     {
-        if (string.IsNullOrWhiteSpace(value) || opacity <= .001) return;
+        if (string.IsNullOrWhiteSpace(value) || opacity <= .001 || revealLength == 0 || lineProgress <= 0) return;
         var maxWidth = rect.Width * .84;
         var fontSize = Math.Clamp(style.FontSize, 20, 160) * rect.Height / 1080;
-        var typeface = new Typeface(new FontFamily(string.IsNullOrWhiteSpace(style.FontFamily) ? "Segoe UI" : style.FontFamily), FontStyle.Normal, FontWeight.SemiBold);
+        var typeface = ResolveTypeface(style);
         var text = GetText(value, typeface, fontSize, maxWidth, style.TextColor);
         // Keep complete stanzas inside the safe area rather than clipping long lyrics.
         if (text.Height > rect.Height * .72 || text.Width > maxWidth)
@@ -314,32 +359,108 @@ public sealed class StageRenderer : Control, IDisposable
             text = GetText(value, typeface, fontSize, maxWidth, style.TextColor);
         }
         var shadow = GetText(value, typeface, fontSize, maxWidth, "#B0000000");
-        var x = (rect.Width - maxWidth) / 2;
+        var x = (rect.Width - maxWidth) / 2 + offsetX;
         var y = Math.Clamp(Math.Clamp(style.TextY, .15, .85) * rect.Height - text.Height / 2,
-            rect.Height * .06, Math.Max(rect.Height * .06, rect.Height * .94 - text.Height)) + offset;
+            rect.Height * .06, Math.Max(rect.Height * .06, rect.Height * .94 - text.Height)) + offsetY;
+        var intensity = Math.Clamp(style.LyricAnimationIntensity, 0, 1);
+        var phase=seconds*Math.PI;
+        switch(style.LyricAnimation)
+        {
+            case "Float": y+=Math.Sin(phase*.7)*rect.Height*.022*intensity; break;
+            case "Pulse": scale*=1+Math.Sin(phase*1.5)*.045*intensity; break;
+            case "Breathe":
+                scale*=1+Math.Sin(phase*.55)*.018*intensity;
+                opacity*=1-(.2-.2*Math.Sin(phase*.55))*intensity;
+                break;
+            case "Sway": rotation+=Math.Sin(phase*.65)*.035*intensity; break;
+            case "Bounce": y-=Math.Abs(Math.Sin(phase*1.1))*rect.Height*.045*intensity; break;
+            case "Shake":
+                x+=(Math.Sin(phase*13)+Math.Sin(phase*21.7))*.5*rect.Width*.004*intensity;
+                y+=Math.Sin(phase*17.2)*rect.Height*.006*intensity;
+                break;
+        }
         using var opacityState = context.PushOpacity(Math.Clamp(opacity, 0, 1));
         var animatedScale = scale * (1 + audio * .015);
-        using var transform = context.PushTransform(Matrix.CreateTranslation(-rect.Width / 2, -rect.Height / 2) *
-            Matrix.CreateScale(animatedScale, animatedScale) * Matrix.CreateTranslation(rect.Width / 2, rect.Height / 2));
+        var anchor=new Point(rect.Width/2, y+text.Height/2);
+        using var transform = context.PushTransform(Matrix.CreateTranslation(-anchor.X, -anchor.Y) *
+            Matrix.CreateScale(animatedScale, animatedScale) * Matrix.CreateRotation(rotation) * Matrix.CreateTranslation(anchor.X, anchor.Y));
         var shadowOffset = Math.Max(1, rect.Height / 360);
-        context.DrawText(shadow, new Point(x + shadowOffset, y + shadowOffset));
-        context.DrawText(text, new Point(x, y));
+        var revealRects = revealLength is { } length && length<value.Length ? text.HitTestTextRange(0,length).ToArray() : null;
+        var top=0d;
+        for(var index=0;index<text.TextLines.Count;index++)
+        {
+            var line=text.TextLines[index];
+            var lineY=y+top;
+            if(style.LyricAnimation=="Wave")lineY+=Math.Sin(phase+index*.95)*fontSize*.24*intensity;
+            var stagger=lineProgress>=1?1:Math.Clamp((lineProgress-index*.6/Math.Max(1,text.TextLines.Count))/.4,0,1);
+            var lineOpacity=EaseOut(stagger);
+            var entranceOffset=(1-lineOpacity)*fontSize*.75;
+            if(lineOpacity>.001)
+            {
+                using var lineFade=context.PushOpacity(lineOpacity);
+                if(revealRects==null)DrawLine();
+                else foreach(var region in revealRects)
+                {
+                    if(region.Bottom <= top+.01 || region.Top >= top+line.Height-.01)continue;
+                    using var revealClip=context.PushClip(new Rect(x+region.X-1,lineY+entranceOffset-1,region.Width+shadowOffset+2,line.Height+shadowOffset+2));
+                    DrawLine();
+                }
+            }
+            top+=line.Height;
+
+            void DrawLine()
+            {
+                var origin=new Point(x,lineY+entranceOffset);
+                if(style.LyricAnimation=="Glow" && intensity>0)
+                {
+                    var glowOpacity=(.08+.08*(1+Math.Sin(phase*.8)))*intensity;
+                    var radius=Math.Max(1,fontSize*.06)*(1+Math.Sin(phase*.8)*.25);
+                    using var glow=context.PushOpacity(glowOpacity);
+                    for(var ray=0;ray<8;ray++)
+                    {
+                        var angle=ray*Math.PI/4;
+                        line.Draw(context,origin+new Vector(Math.Cos(angle)*radius,Math.Sin(angle)*radius));
+                    }
+                }
+                shadow.TextLines[index].Draw(context,origin+new Vector(shadowOffset,shadowOffset));
+                line.Draw(context,origin);
+            }
+        }
     }
 
-    private FormattedText GetText(string value, Typeface typeface, double size, double width, string color)
+    private Typeface ResolveTypeface(StageStyle style)
     {
-        var key = value + '\u001e' + typeface + '\u001e' + size.ToString("F3", CultureInfo.InvariantCulture) + '\u001e' + width.ToString("F2", CultureInfo.InvariantCulture) + '\u001e' + color;
-        if (_textCache.TryGetValue(key, out var formatted)) return formatted;
-        if (_textCache.Count > 180) _textCache.Clear();
-        formatted = new FormattedText(value, CultureInfo.GetCultureInfo("pt-BR"), FlowDirection.LeftToRight,
-            typeface, Math.Max(1, size), Brush(color, "#FFFFFF"))
+        var family=string.IsNullOrWhiteSpace(style.FontFamily)?"Segoe UI":style.FontFamily.Trim();
+        if(_typefaces.TryGetValue((family,style.Bold),out var cached))return cached;
+        Typeface typeface;
+        try
         {
-            MaxTextWidth = Math.Max(1, width),
-            TextAlignment = TextAlignment.Center,
-            Trimming = TextTrimming.None
-        };
+            typeface=new Typeface(new FontFamily(family),FontStyle.Normal,style.Bold?FontWeight.Bold:FontWeight.Normal);
+            if(!FontManager.Current.TryGetGlyphTypeface(typeface,out _))
+                typeface=new Typeface("Segoe UI",FontStyle.Normal,style.Bold?FontWeight.Bold:FontWeight.Normal);
+        }
+        catch(ArgumentException){typeface=new Typeface("Segoe UI",FontStyle.Normal,style.Bold?FontWeight.Bold:FontWeight.Normal);}
+        _typefaces[(family,style.Bold)]=typeface;
+        return typeface;
+    }
+
+    private TextLayout GetText(string value, Typeface typeface, double size, double width, string color)
+    {
+        // Typeface has ValueType.ToString(): it returns the same text for every family.
+        // Key each actual typography component so font/weight changes never reuse stale glyphs.
+        var key = new TextCacheKey(value, typeface.FontFamily.Name, typeface.FontFamily.Key,
+            typeface.Style, typeface.Weight, typeface.Stretch, Math.Round(size,3), Math.Round(width,2), ColorOr(color,"#FFFFFF"));
+        if (_textCache.TryGetValue(key, out var formatted)) return formatted;
+        formatted = new TextLayout(value,typeface,Math.Max(1,size),Brush(color,"#FFFFFF"),
+            TextAlignment.Center,TextWrapping.Wrap,TextTrimming.None,flowDirection:FlowDirection.LeftToRight,maxWidth:Math.Max(1,width));
         _textCache[key] = formatted;
         return formatted;
+    }
+
+    private void ClearTextCache()
+    {
+        foreach(var layout in _textCache.Values)layout.Dispose();
+        _textCache.Clear();
     }
 
     private static Color ColorOr(string? value, string fallback)
@@ -353,6 +474,7 @@ public sealed class StageRenderer : Control, IDisposable
         _timer.Stop();
         _image?.Dispose();
         _image = null;
-        _textCache.Clear();
+        ClearTextCache();
+        _typefaces.Clear();
     }
 }

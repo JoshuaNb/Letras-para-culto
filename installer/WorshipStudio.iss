@@ -2,11 +2,17 @@
   #define AppSource "..\app\win-x64"
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
+#endif
+#ifndef AppIdentity
+  #define AppIdentity "{{7DE7E094-533F-4EB2-A817-CE015CE1A823}"
+#endif
+#ifndef PackageOutputDir
+  #define PackageOutputDir "..\.."
 #endif
 
 [Setup]
-AppId={{7DE7E094-533F-4EB2-A817-CE015CE1A823}
+AppId={#AppIdentity}
 AppName=Worship Studio
 AppVersion={#AppVersion}
 AppPublisher=Worship Studio
@@ -18,7 +24,7 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.22000
-OutputDir=..\..
+OutputDir={#PackageOutputDir}
 OutputBaseFilename=WorshipStudio-Setup-{#AppVersion}
 Compression=lzma2/fast
 SolidCompression=yes
