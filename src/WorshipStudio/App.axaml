@@ -1,0 +1,19 @@
+<Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="WorshipStudio.App" RequestedThemeVariant="Dark">
+ <Application.Styles>
+  <FluentTheme />
+  <Style Selector="Window"><Setter Property="FontFamily" Value="Inter, Segoe UI"/><Setter Property="Background" Value="#0D1017"/><Setter Property="Foreground" Value="#E9EDF5"/></Style>
+  <Style Selector="TextBlock"><Setter Property="FontSize" Value="13"/></Style>
+  <Style Selector="Button"><Setter Property="CornerRadius" Value="7"/><Setter Property="MinHeight" Value="35"/><Setter Property="Padding" Value="13,7"/><Setter Property="Background" Value="#222936"/><Setter Property="BorderThickness" Value="0"/></Style>
+  <Style Selector="Button.primary"><Setter Property="Background" Value="#48DCC4"/><Setter Property="Foreground" Value="#071917"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+  <Style Selector="Button.danger"><Setter Property="Background" Value="#40202A"/><Setter Property="Foreground" Value="#FFB1BC"/></Style>
+  <Style Selector="Button.flat"><Setter Property="Background" Value="Transparent"/></Style>
+  <Style Selector="Button.nav"><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Left"/></Style>
+  <Style Selector="TextBox"><Setter Property="CornerRadius" Value="6"/><Setter Property="Background" Value="#111722"/><Setter Property="BorderBrush" Value="#303849"/><Setter Property="MinHeight" Value="36"/></Style>
+  <Style Selector="ComboBox"><Setter Property="CornerRadius" Value="6"/><Setter Property="Background" Value="#161D29"/><Setter Property="HorizontalAlignment" Value="Stretch"/></Style>
+  <Style Selector="TextBlock.caption"><Setter Property="FontSize" Value="10"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="LetterSpacing" Value="1.5"/><Setter Property="Foreground" Value="#8593A8"/></Style>
+  <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="#8D9BB0"/></Style>
+  <Style Selector="Border.panel"><Setter Property="Background" Value="#151B26"/><Setter Property="CornerRadius" Value="10"/><Setter Property="BorderBrush" Value="#252E3D"/><Setter Property="BorderThickness" Value="1"/></Style>
+  <Style Selector="ListBox"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/></Style>
+  <Style Selector="ListBoxItem"><Setter Property="Padding" Value="10,9"/><Setter Property="Margin" Value="0,2"/><Setter Property="CornerRadius" Value="7"/></Style>
+ </Application.Styles>
+</Application>

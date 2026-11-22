@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/.vs/
+**/TestResults/
+**/.avalonia-build-tasks/
+app/
+*.user
+*.suo
+*.log
+.env
+.env.*
+*.exe
+*.dll
+*.pdb
+third-party-sources/*.tar.*
+.distribution-cache/
