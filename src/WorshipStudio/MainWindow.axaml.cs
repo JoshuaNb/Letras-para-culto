@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Rendering.Composition;
@@ -13,6 +14,7 @@ using Avalonia.VisualTree;
 using WorshipStudio.Controls;
 using WorshipStudio.Models;
 using WorshipStudio.Services;
+using WorshipStudio.Themes;
 
 namespace WorshipStudio;
 
@@ -21,11 +23,19 @@ public partial class MainWindow : Window
     private readonly LibraryStore _store = new();
     private StudioDocument _document = new();
     private readonly StageSurface _preview = new();
+    private readonly StageSurface _programPreview = new();
+    private readonly UpdateService _updater = new();
+    private readonly CancellationTokenSource _lifetime = new();
+    private UpdateRelease? _availableUpdate;
+    private bool _checkingUpdates;
+    private UpdateWindow? _updateWindow;
+    private (string Tag,string Path,string Hash)? _downloadedUpdate;
     private readonly AudioReactiveService _audio = new();
     private readonly RemoteServer _remote = new();
     private readonly HolyricsService _holyrics = new();
     private readonly DispatcherTimer _tick;
     private readonly DispatcherTimer _saveTimer;
+    private readonly DispatcherTimer _updateTimer;
     private ProjectionWindow? _projection;
     private Song? _selected;
     private List<Slide> _slides = [];
@@ -57,13 +67,18 @@ public partial class MainWindow : Window
             AppLog.Write(ex.ToString());
         }
         C<ContentControl>("PreviewHost").Content = _preview;
+        C<ContentControl>("LivePreviewHost").Content = _programPreview;
         _preview.Error += BackgroundError;
+        _programPreview.Error += BackgroundError;
         _remote.Error += BackgroundError;
         _audio.Error += BackgroundError;
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
         _saveTimer.Tick += (_,_) => { _saveTimer.Stop(); Persist(); };
         _tick = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
         _tick.Tick += (_,_) => RenderFrames();
+        _updateTimer=new DispatcherTimer{Interval=TimeSpan.FromHours(6)};
+        _updateTimer.Tick+=(_,_)=>{if(App.Preferences.AutoCheckUpdates)_=CheckForUpdates(false);};
+        _updateTimer.Start();
         ConfigureControls();
         BindActions();
         _loading = false;
@@ -85,6 +100,7 @@ public partial class MainWindow : Window
             catch(Exception ex){_gpuStatus="Backend gráfico automático";AppLog.Write(ex.Message);}
             if (_startupError != null) await Message("Biblioteca preservada", _startupError);
             else Status("Pronto · "+_gpuStatus+" · biblioteca local salva automaticamente");
+            if (App.Preferences.AutoCheckUpdates) _ = CheckForUpdates(false);
         };
         Screens.Changed += (_,_) => Dispatcher.UIThread.Post(RefreshMonitors);
         Closing += OnClosing;
@@ -102,6 +118,20 @@ public partial class MainWindow : Window
 
     private void ConfigureControls()
     {
+        C<ComboBox>("ThemeCombo").ItemsSource=StudioThemes.Choices;
+        C<ComboBox>("ThemeCombo").SelectedItem=StudioThemes.Choices.First(c=>c.Id==App.Preferences.Theme);
+        C<ComboBox>("ThemeCombo").SelectionChanged+=(_,_)=>
+        {
+            if(_loading || C<ComboBox>("ThemeCombo").SelectedItem is not ThemeChoice choice)return;
+            StudioThemes.Apply(choice.Id);App.Preferences.Theme=choice.Id;SavePreferences();
+        };
+        C<TextBlock>("VersionLabel").Text="Worship Studio · versão "+UpdateService.CurrentVersion;
+        C<CheckBox>("AutoUpdateCheck").IsChecked=App.Preferences.AutoCheckUpdates;
+        C<CheckBox>("AutoUpdateCheck").IsCheckedChanged+=(_,_)=>
+        {
+            if(_loading)return;
+            App.Preferences.AutoCheckUpdates=C<CheckBox>("AutoUpdateCheck").IsChecked==true;SavePreferences();
+        };
         C<ComboBox>("BackgroundCombo").ItemsSource = new[] { "Aurora fluida", "Túnel 3D", "Partículas 3D", "Cor sólida", "Imagem local", "Vídeo local" };
         C<ComboBox>("TransitionCombo").ItemsSource = new[] { "Dissolver", "Subir", "Descer", "Entrar pela esquerda", "Entrar pela direita", "Aproximar", "Salto com aproximação", "Girar e aparecer", "Revelar da esquerda", "Máquina de escrever", "Palavra por palavra", "Linha por linha", "Corte direto" };
         C<ComboBox>("LetterAnimationCombo").ItemsSource = new[] { "Sem animação contínua", "Flutuar", "Onda nas linhas", "Pulsar", "Respiração", "Balançar", "Saltar", "Brilho pulsante", "Vibração suave" };
@@ -131,6 +161,11 @@ public partial class MainWindow : Window
 
     private void BindActions()
     {
+        Click("OperationWorkspaceButton",()=>C<TabControl>("InspectorTabs").SelectedIndex=0);
+        Click("AnimationsWorkspaceButton",()=>C<Button>("AnimationGalleryButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+        Click("ConnectionsWorkspaceButton",()=>C<TabControl>("InspectorTabs").SelectedIndex=1);
+        ClickAsync("UpdateButton",OpenUpdates);
+        ClickAsync("CheckUpdatesButton",()=>CheckForUpdates(true));
         C<TextBox>("SearchBox").TextChanged+=(_,_)=>{if(!_loading)RefreshLibrary(_selected?.Id);};
         C<ComboBox>("LibraryMode").SelectionChanged+=(_,_)=>{if(!_loading)RefreshLibrary(_selected?.Id);};
         C<ListBox>("LibraryList").SelectionChanged+=(_,_)=>SelectSong(C<ListBox>("LibraryList").SelectedItem as Song);
@@ -154,6 +189,7 @@ public partial class MainWindow : Window
         Click("BlackButton",ToggleBlackout);Click("HideButton",ToggleLyrics);
         Click("BeatButton",()=>_audio.Tap());
         Click("ReplayButton",()=>_preview.ReplayTransition());
+        Click("ReplayInspectorButton",()=>_preview.ReplayTransition());
         ClickAsync("AnimationGalleryButton",async()=>
         {
             var text=_slides.Count>0?_slides[Math.Clamp(_previewIndex,0,_slides.Count-1)].Text:"Tua presença\nEnche este lugar";
@@ -271,10 +307,13 @@ public partial class MainWindow : Window
             var index=i;var slide=_slides[i];
             var isLive=_liveSongId==_selected?.Id&&i==_liveIndex;
             var stack=new StackPanel {Spacing=8};
-            stack.Children.Add(new TextBlock{Text=$"{i+1:00}  {slide.Label.ToUpperInvariant()}".Replace("ESTROFE","ESTROFE"),FontSize=10,FontWeight=FontWeight.SemiBold,Foreground=new SolidColorBrush(isLive?Color.Parse("#FF9BAA"):Color.Parse("#6CCDBB"))});
+            var label=new TextBlock{Text=$"{i+1:00}  {slide.Label.ToUpperInvariant()}",FontSize=10,FontWeight=FontWeight.SemiBold};
+            label.Bind(TextBlock.ForegroundProperty,new DynamicResourceExtension(isLive?"WsLive":"WsAccentLabel"));stack.Children.Add(label);
             stack.Children.Add(new TextBlock{Text=slide.Text,FontSize=12,TextWrapping=TextWrapping.Wrap,MaxLines=4,TextTrimming=TextTrimming.CharacterEllipsis,Height=65});
-            if(isLive)stack.Children.Add(new TextBlock{Text="● AO VIVO",FontSize=9,Foreground=Brushes.Pink});
-            var button=new Button{Content=stack,Width=215,Height=135,Margin=new Thickness(0,0,9,9),Padding=new Thickness(12),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Top,Background=new SolidColorBrush(Color.Parse(i==_previewIndex?"#213831":"#18202D")),BorderBrush=new SolidColorBrush(Color.Parse(i==_previewIndex?"#48DCC4":isLive?"#7B3C4A":"#2C3647")),BorderThickness=new Thickness(1)};
+            if(isLive){var live=new TextBlock{Text="● AO VIVO",FontSize=9};live.Bind(TextBlock.ForegroundProperty,new DynamicResourceExtension("WsLive"));stack.Children.Add(live);}
+            var button=new Button{Content=stack,Width=210,Height=139,Margin=new Thickness(0,0,9,9),Padding=new Thickness(12),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Top,BorderThickness=new Thickness(1)};
+            button.Bind(Button.BackgroundProperty,new DynamicResourceExtension(i==_previewIndex?"WsSelection":"WsSurface"));
+            button.Bind(Button.BorderBrushProperty,new DynamicResourceExtension(i==_previewIndex?"WsAccent":isLive?"WsLive":"WsBorder"));
             button.Click+=(_,_)=>{_previewIndex=index;BuildSlideCards();RenderFrames();};
             button.DoubleTapped+=(_,_)=>{_previewIndex=index;SendPreview();};
             panel.Children.Add(button);
@@ -324,6 +363,7 @@ public partial class MainWindow : Window
         var text=_slides.Count==0?"":_slides[Math.Clamp(_previewIndex,0,_slides.Count-1)].Text;
         _preview.SetFrame(new StageFrame{Text=text,Style=style,AudioLevel=_audio.Level,Revision=_previewIndex});
         _projection?.SetFrame(new StageFrame{Text=_liveText,PreviousText=_previousText,Style=style,AudioLevel=_audio.Level,Blackout=_blackout,HideLyrics=_hideLyrics,Revision=_revision});
+        _programPreview.SetFrame(new StageFrame{Text=_liveText,PreviousText=_previousText,Style=style,AudioLevel=_audio.Level,Blackout=_blackout||_projection==null,HideLyrics=_hideLyrics,Revision=_revision});
         C<ProgressBar>("AudioMeter").Value=_audio.Level;
         _remoteState=new {title=_liveTitle,text=_liveText,index=_liveIndex,count=_liveSlides.Count,blackout=_blackout,hideLyrics=_hideLyrics,slides=_liveSlides.Select(s=>new{label=s.Label,text=s.Text}).ToArray()};
     }
@@ -547,7 +587,80 @@ public partial class MainWindow : Window
     private void OnClosing(object? sender,WindowClosingEventArgs e)
     {
         if(_restoring){e.Cancel=true;Status("Aguarde a restauração terminar antes de fechar.");return;}
-        _closing=true;_tick.Stop();_saveTimer.Stop();Persist();StopFollowing();_remote.Dispose();_audio.Dispose();_holyrics.Dispose();_preview.Dispose();_projection?.Close();
+        _closing=true;_lifetime.Cancel();_updateWindow?.Close();_tick.Stop();_saveTimer.Stop();_updateTimer.Stop();Persist();StopFollowing();_remote.Dispose();_audio.Dispose();_holyrics.Dispose();_preview.Dispose();_programPreview.Dispose();_projection?.Close();_updater.Dispose();
+    }
+
+    private void SavePreferences()
+    {
+        try{App.Preferences.Save(LibraryStore.DataDirectoryOverride);}
+        catch(Exception ex){BackgroundError("Não foi possível salvar as preferências: "+ex.Message);}
+    }
+
+    private async Task OpenUpdates()
+    {
+        if(_availableUpdate==null)await CheckForUpdates(false);
+        if(_closing)return;
+        if(_availableUpdate!=null)ShowUpdateWindow();
+        else
+        {
+            C<TabControl>("InspectorTabs").SelectedIndex=2;
+            Status(C<TextBlock>("UpdateDetails").Text??"Verifique sua conexão para consultar atualizações.");
+        }
+    }
+
+    private async Task CheckForUpdates(bool showAvailable)
+    {
+        if(_checkingUpdates||_closing)return;
+        _checkingUpdates=true;
+        C<Button>("CheckUpdatesButton").IsEnabled=false;
+        C<TextBlock>("UpdateStatus").Text="Buscando atualizações…";
+        try
+        {
+            _availableUpdate=await _updater.CheckAsync(cancellationToken:_lifetime.Token);
+            if(_closing)return;
+            var text=_availableUpdate==null?"Versão "+UpdateService.CurrentVersion+" atualizada · "+DateTime.Now.ToString("HH:mm"):"Atualização "+_availableUpdate.Version+" disponível";
+            C<TextBlock>("UpdateStatus").Text=text;C<TextBlock>("UpdateDetails").Text=text;
+            C<Button>("UpdateButton").Content=_availableUpdate==null?"Atualizações":"↓ Atualizar · "+_availableUpdate.Version;
+            if(showAvailable&&_availableUpdate!=null)ShowUpdateWindow();
+        }
+        catch(OperationCanceledException) when(_closing){}
+        catch(Exception ex)
+        {
+            if(_closing)return;
+            AppLog.Write("Atualização: "+ex.Message);
+            C<TextBlock>("UpdateStatus").Text="Operação offline · atualização não consultada";
+            C<TextBlock>("UpdateDetails").Text="Não foi possível consultar o GitHub. A operação continua disponível. "+ex.Message;
+        }
+        finally{_checkingUpdates=false;if(!_closing)C<Button>("CheckUpdatesButton").IsEnabled=true;}
+    }
+
+    private void ShowUpdateWindow()
+    {
+        if(_updateWindow!=null){_updateWindow.Activate();return;}
+        if(_availableUpdate==null)return;
+        var cache=_downloadedUpdate;
+        _updateWindow=new UpdateWindow(_updater,_availableUpdate,InstallUpdate,
+            cache?.Tag==_availableUpdate.Tag?cache.Value.Path:null,
+            cache?.Tag==_availableUpdate.Tag?cache.Value.Hash:null);
+        var tag=_availableUpdate.Tag;
+        _updateWindow.DownloadVerified+=(path,hash)=>_downloadedUpdate=(tag,path,hash);
+        _updateWindow.Closed+=(_,_)=>_updateWindow=null;
+        _updateWindow.Show(this);
+    }
+
+    private async Task<bool> InstallUpdate(string path)
+    {
+        if(_restoring){await Message("Restauração em andamento","Aguarde a restauração terminar antes de atualizar.");return false;}
+        if(!await Confirm("Instalar atualização?","A projeção será encerrada e o Worship Studio será fechado para abrir o instalador. Sua biblioteca será preservada. Você pode instalar depois, ao terminar o culto.",_updateWindow))return false;
+        if(_startupError!=null){await Message("Biblioteca preservada","Resolva o erro de carregamento da biblioteca antes de instalar a atualização.");return false;}
+        // A failure to flush the library must leave the operator and projection running.
+        _store.Save(_document);
+        var start=new System.Diagnostics.ProcessStartInfo(path){UseShellExecute=true};
+        var installDirectory=AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+        if(File.Exists(Path.Combine(installDirectory,"unins000.exe")))start.ArgumentList.Add("/DIR="+installDirectory);
+        start.ArgumentList.Add("/NORESTART");
+        if(System.Diagnostics.Process.Start(start)==null)throw new IOException("O Windows não abriu o instalador.");
+        Dispatcher.UIThread.Post(Close);return true;
     }
 
     private async Task Message(string title,string text)
@@ -555,13 +668,17 @@ public partial class MainWindow : Window
         var dialog=DialogWindow(title,text);var button=new Button{Content="Entendi",Classes={"primary"},HorizontalAlignment=HorizontalAlignment.Right,Margin=new Thickness(0,18,0,0)};
         ((StackPanel)dialog.Content!).Children.Add(button);button.Click+=(_,_)=>dialog.Close();await dialog.ShowDialog(this);
     }
-    private async Task<bool> Confirm(string title,string text)
+    private async Task<bool> Confirm(string title,string text,Window? owner=null)
     {
         var dialog=DialogWindow(title,text);var buttons=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Spacing=8,Margin=new Thickness(0,20,0,0)};
         var cancel=new Button{Content="Cancelar"};var yes=new Button{Content="Continuar",Classes={"primary"}};buttons.Children.Add(cancel);buttons.Children.Add(yes);((StackPanel)dialog.Content!).Children.Add(buttons);
-        cancel.Click+=(_,_)=>dialog.Close(false);yes.Click+=(_,_)=>dialog.Close(true);return await dialog.ShowDialog<bool>(this);
+        cancel.Click+=(_,_)=>dialog.Close(false);yes.Click+=(_,_)=>dialog.Close(true);return await dialog.ShowDialog<bool>(owner??this);
     }
-    private static Window DialogWindow(string title,string text)=>new(){Title=title,Width=580,SizeToContent=SizeToContent.Height,MaxHeight=760,CanResize=false,WindowStartupLocation=WindowStartupLocation.CenterOwner,Content=new StackPanel{Margin=new Thickness(25),Children={new TextBlock{Text=title,FontSize=21,FontWeight=FontWeight.SemiBold,Margin=new Thickness(0,0,0,15)},new TextBlock{Text=text,TextWrapping=TextWrapping.Wrap,FontSize=12,Foreground=new SolidColorBrush(Color.Parse("#B9C5D6"))}}}};
+    private static Window DialogWindow(string title,string text)
+    {
+        var description=new TextBlock{Text=text,TextWrapping=TextWrapping.Wrap,FontSize=12};description.Bind(TextBlock.ForegroundProperty,new DynamicResourceExtension("WsMuted"));
+        return new Window{Title=title,Width=580,SizeToContent=SizeToContent.Height,MaxHeight=760,CanResize=false,WindowStartupLocation=WindowStartupLocation.CenterOwner,Content=new StackPanel{Margin=new Thickness(25),Children={new TextBlock{Text=title,FontSize=21,FontWeight=FontWeight.SemiBold,Margin=new Thickness(0,0,0,15)},description}}};
+    }
 }
 
 internal sealed class SongEditor : Window

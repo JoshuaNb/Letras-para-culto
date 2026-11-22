@@ -1,7 +1,9 @@
 param([string]$Destination = '')
 $ErrorActionPreference = 'Stop'
 $taskRoot = [IO.Path]::GetFullPath($PSScriptRoot)
-if (-not $Destination) { $Destination = Join-Path (Split-Path $taskRoot -Parent) 'WorshipStudio-Codigo-Fonte-1.2.0.zip' }
+$taskProject = Join-Path $taskRoot 'src/WorshipStudio/WorshipStudio.csproj'
+$taskVersion = ([xml](Get-Content -LiteralPath $taskProject -Raw)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+if (-not $Destination) { $Destination = Join-Path (Split-Path $taskRoot -Parent) "WorshipStudio-Codigo-Fonte-$taskVersion.zip" }
 $taskTarget = [IO.Path]::GetFullPath($Destination)
 if ($taskTarget.StartsWith($taskRoot + [IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) {
     throw 'Salve o arquivo ZIP fora da pasta de origem para evitar inclusão recursiva.'
@@ -13,7 +15,7 @@ try {
     try {
         foreach ($taskFile in Get-ChildItem -LiteralPath $taskRoot -File -Recurse) {
             $taskRelative = [IO.Path]::GetRelativePath($taskRoot,$taskFile.FullName)
-            if ($taskRelative -match '^(app)[\\/]' -or $taskRelative -match '(^|[\\/])(bin|obj|TestResults|\.avalonia-build-tasks)[\\/]') { continue }
+            if ($taskRelative -match '^(app|\.git|\.distribution-cache)[\\/]' -or $taskRelative -match '(^|[\\/])(bin|obj|TestResults|\.vs|\.avalonia-build-tasks)[\\/]') { continue }
             $taskEntry = 'WorshipStudio/' + $taskRelative.Replace('\','/')
             [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($taskArchive,$taskFile.FullName,$taskEntry,[IO.Compression.CompressionLevel]::Optimal) | Out-Null
         }

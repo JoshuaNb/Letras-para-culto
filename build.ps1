@@ -14,6 +14,7 @@ if (-not $DotnetPath) {
     else { throw 'Instale o SDK .NET 10 ou informe -DotnetPath.' }
 }
 $taskProject = Join-Path $taskProjectRoot 'src\WorshipStudio\WorshipStudio.csproj'
+$taskVersion = ([xml](Get-Content -LiteralPath $taskProject -Raw)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
 $taskTests = Join-Path $taskProjectRoot 'tests\WorshipStudio.Tests.csproj'
 $taskPublish = Join-Path $taskProjectRoot 'app\win-x64'
 & $DotnetPath restore $taskProject
@@ -21,8 +22,13 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao restaurar dependências.' }
 if (-not $SkipTests) {
     & $DotnetPath test $taskTests -c Release --logger 'trx;LogFileName=verification.trx'
     if ($LASTEXITCODE -ne 0) { throw 'Os testes falharam. O pacote não foi publicado.' }
-    & $DotnetPath run --project (Join-Path $taskProjectRoot 'render-tests\WorshipStudio.RenderTests.csproj') -c Release -- --output (Join-Path $taskProjectRoot 'test-evidence\typography-1.2')
+    & $DotnetPath run --project (Join-Path $taskProjectRoot 'render-tests\WorshipStudio.RenderTests.csproj') -c Release -- --output (Join-Path $taskProjectRoot "test-evidence\typography-$taskVersion")
     if ($LASTEXITCODE -ne 0) { throw 'Os testes visuais de letras falharam. O pacote não foi publicado.' }
+    $taskUiTests = Join-Path $taskProjectRoot 'ui-tests\WorshipStudio.UiTests.csproj'
+    if (Test-Path -LiteralPath $taskUiTests) {
+        & $DotnetPath run --project $taskUiTests -c Release -- --output (Join-Path $taskProjectRoot "test-evidence\ui-headless-$taskVersion")
+        if ($LASTEXITCODE -ne 0) { throw 'Os testes de operação da interface falharam. O pacote não foi publicado.' }
+    }
 }
 & $DotnetPath publish $taskProject -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o $taskPublish
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao publicar.' }
@@ -30,7 +36,6 @@ Copy-Item -Path (Join-Path $taskProjectRoot 'licenses') -Destination $taskPublis
 Copy-Item -Path (Join-Path $taskProjectRoot 'LICENSE.txt') -Destination (Join-Path $taskPublish 'WorshipStudio-LICENSE.txt') -Force
 Copy-Item -Path (Join-Path $taskProjectRoot 'README.pt-BR.md') -Destination $taskPublish -Force
 if (Test-Path (Join-Path $taskProjectRoot 'VERIFICACAO.md')) { Copy-Item -Path (Join-Path $taskProjectRoot 'VERIFICACAO.md') -Destination $taskPublish -Force }
-if (Test-Path (Join-Path $taskProjectRoot 'test-evidence')) { Copy-Item -Path (Join-Path $taskProjectRoot 'test-evidence') -Destination $taskPublish -Recurse -Force }
 if (-not $SkipInstaller) {
     if (-not $InnoCompiler) {
         $taskLocalCompiler = Join-Path $taskProjectRoot '..\..\work\tools\inno\ISCC.exe'
@@ -39,7 +44,7 @@ if (-not $SkipInstaller) {
         elseif (Test-Path $taskProgramCompiler) { $InnoCompiler = $taskProgramCompiler }
         else { throw 'Instale Inno Setup 6 ou informe -InnoCompiler.' }
     }
-    & $InnoCompiler (Join-Path $taskProjectRoot 'installer\WorshipStudio.iss')
+    & $InnoCompiler /Q "/DAppVersion=$taskVersion" (Join-Path $taskProjectRoot 'installer\WorshipStudio.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Falha ao compilar o instalador.' }
 }
 Write-Host "Aplicativo publicado em $taskPublish"

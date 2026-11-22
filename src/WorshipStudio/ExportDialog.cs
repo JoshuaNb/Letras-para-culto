@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -23,8 +24,8 @@ public sealed class ExportDialog : Window
     private readonly NumericUpDown _seconds = new() { Minimum = .5m, Maximum = 120m, Increment = .5m, FormatString = "0.0 's'", HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly CheckBox _hardware = new() { Content = "Tentar codificação H.264 pela GPU AMD (AMF)", IsChecked = false };
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 100, Height = 8, Value = 0 };
-    private readonly TextBlock _duration = new() { Foreground = Brush.Parse("#8D9BB0"), TextWrapping = TextWrapping.Wrap };
-    private readonly TextBlock _status = new() { Text = "Pronto para exportar. O arquivo é gerado neste computador, sem conexão.", TextWrapping = TextWrapping.Wrap, Foreground = Brush.Parse("#A9B7CA") };
+    private readonly TextBlock _duration = new() { [!TextBlock.ForegroundProperty] = new DynamicResourceExtension("WsMuted"), TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _status = new() { Text = "Pronto para exportar. O arquivo é gerado neste computador, sem conexão.", TextWrapping = TextWrapping.Wrap, [!TextBlock.ForegroundProperty] = new DynamicResourceExtension("WsText") };
     private readonly Button _start = new() { Content = "Exportar MP4", Classes = { "primary" } };
     private readonly Button _cancel = new() { Content = "Fechar" };
     private readonly StackPanel _settings = new() { Spacing = 15 };
@@ -65,7 +66,7 @@ public sealed class ExportDialog : Window
         _settings.Children.Add(new TextBlock
         {
             Text = "A intensidade do áudio escolhido também anima os efeitos do vídeo. A trilha é incluída no MP4; silêncio completa o tempo restante.",
-            FontSize = 11, TextWrapping = TextWrapping.Wrap, Foreground = Brush.Parse("#8D9BB0")
+            FontSize = 11, TextWrapping = TextWrapping.Wrap, [!TextBlock.ForegroundProperty] = new DynamicResourceExtension("WsMuted")
         });
         _settings.Children.Add(_hardware);
 
@@ -74,7 +75,7 @@ public sealed class ExportDialog : Window
         actions.Children.Add(_start);
         var body = new StackPanel { Margin = new Thickness(26), Spacing = 18 };
         body.Children.Add(new TextBlock { Text = "Exportar a projeção", FontSize = 23, FontWeight = FontWeight.SemiBold });
-        body.Children.Add(new TextBlock { Text = "Letras animadas, fundos e transições em um arquivo MP4 offline.", TextWrapping = TextWrapping.Wrap, Foreground = Brush.Parse("#8D9BB0") });
+        body.Children.Add(new TextBlock { Text = "Letras animadas, fundos e transições em um arquivo MP4 offline.", TextWrapping = TextWrapping.Wrap, [!TextBlock.ForegroundProperty] = new DynamicResourceExtension("WsMuted") });
         body.Children.Add(_settings);
         body.Children.Add(_progress);
         body.Children.Add(_status);

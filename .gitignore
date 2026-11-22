@@ -14,3 +14,4 @@ app/
 *.pdb
 third-party-sources/*.tar.*
 .distribution-cache/
+test-evidence/

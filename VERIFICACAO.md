@@ -1,4 +1,59 @@
-# Verificação — Worship Studio 1.2.0
+# Verificação — Worship Studio 1.3.0
+
+Data: 22/11/2026, America/Sao_Paulo. Compilação Release .NET 10, Avalonia 11.3.22, Windows x64, runtime incluído na distribuição. O equipamento de desenvolvimento tem Ryzen 5 5600G, RX 6600 e um monitor físico.
+
+## Resultado automatizado da versão 1.3
+
+**225 verificações aprovadas, zero falhas ou testes ignorados.**
+
+| Suíte | Aprovações | Evidência no ZIP completo |
+| --- | ---: | --- |
+| Núcleo e serviços | 93 | `test-evidence/update-1.3/verification.trx` |
+| Tipografia e animações clássicas | 29 | `test-evidence/typography-1.3.0/typography-render-tests.json` |
+| Animações granulares | 79 | `test-evidence/typography-1.3.0/granularity-1.2/granularity-render-tests.json` |
+| Interface real Avalonia Headless + Skia | 24 | `test-evidence/ui-headless-1.3.0/results.json` |
+
+O núcleo inclui 36 casos novos do atualizador e 13 de preferências/contraste. A interface usa `App.axaml`, `MainWindow.axaml`, controles, eventos e renderizadores reais. Somente o backend de janelas é substituído por Avalonia Headless; o desenho é feito por Skia.
+
+### Verificações da atualização
+
+- Inicialização real do XAML, biblioteca e preferências isoladas dos dados do operador.
+- Troca imediata dos quatro temas e persistência; contraste mínimo 4,5:1 para os textos de interface avaliados, incluindo destaques no amarelo pastel.
+- Fonte, negrito, cor da letra e cena preservados ao trocar o tema da interface.
+- Prévia e retorno com superfícies independentes, proporção 16:9, três abas do inspetor, busca e biblioteca.
+- Envio à projeção independente, preparar outra estrofe sem enviar, próxima/anterior, tela preta e letra oculta somente na saída ao vivo.
+- Galeria com 66 cartões, abertura e cancelamento; os 65 efeitos animados continuam gerando sequências distintas e terminam no texto completo.
+- Atualizador rejeita versões antigas/iguais, rascunhos, pré-lançamentos, nomes/hosts/arquivos inválidos, corrupção e download incompleto. Respeita cancelamento, timeout e limites de tamanho, removendo arquivos parciais.
+- Janela de atualização modeless: o operador pode continuar navegando estrofes. Progresso, SHA-256, cache da mesma sessão, adiamento e recusa de arquivo adulterado antes da instalação foram exercitados com transporte HTTP injetado e bytes inertes. Nenhum arquivo de teste é executado.
+
+Houve também **uma integração HTTP real**: o serviço detectou a versão 1.2.0 ao simular a 1.1.0, baixou o instalador oficial de 151.413.199 bytes e conferiu manifesto e digest do GitHub. SHA-256: `baa830fe16393958c86135f5b5cc4434136ee18f461e4839c77c77ac7e13e7f8`. O instalador baixado por essa prova não foi executado. Evidência: `test-evidence/update-1.3/live-result.json`. Esta prova é adicional às 225 verificações.
+
+### Reproduzir a versão 1.3
+
+```powershell
+dotnet test tests/WorshipStudio.Tests.csproj -c Release
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.3.0
+dotnet run --project ui-tests/WorshipStudio.UiTests.csproj -c Release -- --output test-evidence/ui-headless-1.3.0
+.\package-release.ps1
+```
+
+O ZIP completo inclui ferramentas nativas e fontes/licenças de terceiros. Após `git clone`, execute `Restaurar-Distribuicao.ps1` antes de empacotar.
+
+### Instalador e atualização da versão anterior
+
+A instalação 1.2.0, atualização sobre ela para 1.3.0 e desinstalação terminaram com código zero em identidade, diretório e grupo de atalhos exclusivos de QA. Biblioteca e preferências de teste foram preservadas. Os hashes instalados de WorshipStudio.dll, runtime, LibVLC e FFmpeg corresponderam ao payload. O executável abriu e respondeu com coreclr.dll carregado da própria instalação e DOTNET_ROOT externo desativado. Registro e atalhos da instalação do operador permaneceram iguais no ensaio final. Evidência: `test-evidence/installer-1.3/results.json`.
+
+### Limites da versão 1.3
+
+As capturas dos quatro temas são renderizações da interface real no backend headless. A abertura nativa do executável 1.3.0 foi observada pela árvore de acessibilidade: janela de operação, biblioteca inicial, GPU ativa e consulta da versão instalada. Isso não equivale a benchmark de FPS/latência nem a inspeção de dois monitores físicos.
+
+A confirmação nativa de instalação pelo botão do aplicativo requer interação do operador. Descoberta e download foram exercitados na rede real; acionamento e adiamento foram testados com callback controlado. Não se publicou uma nova versão oficial falsa para simular atualização superior à 1.3.0.
+
+Permanecem pendentes os testes na igreja com dois monitores físicos, celular físico, Holyrics real e áudio não nulo. Não há detecção de BPM, sincronização de sílabas, importação de modelos 3D ou edição livre de keyframes. As animações interpretam imagens estáticas recebidas, sem comprovação de reprodução idêntica a um vídeo.
+
+## Histórico — verificação da versão 1.2.0
+
+Os registros abaixo descrevem versões anteriores. Suas evidências acompanham os respectivos ZIPs nas [Releases](https://github.com/JoshuaNb/Letras-para-culto/releases), e não substituem a validação 1.3 acima.
 
 Data: 22/11/2026, fuso America/Sao_Paulo. Este relatório distingue testes observados de capacidades implementadas que ainda dependem de validação com os equipamentos da igreja.
 

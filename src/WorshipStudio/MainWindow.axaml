@@ -1,107 +1,123 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:m="using:WorshipStudio.Models" xmlns:controls="using:WorshipStudio.Controls"
-        x:Class="WorshipStudio.MainWindow" Title="Worship Studio — Operação" Width="1480" Height="940" MinWidth="1180" MinHeight="760" WindowStartupLocation="CenterScreen">
- <Grid RowDefinitions="72,*,34">
-  <Border Grid.Row="0" Background="#121722" BorderBrush="#252D3A" BorderThickness="0,0,0,1" Padding="22,12">
+ x:Class="WorshipStudio.MainWindow" Title="Worship Studio — Letras para culto" Width="1560" Height="980" MinWidth="1180" MinHeight="760" WindowStartupLocation="CenterScreen">
+ <Grid RowDefinitions="60,40,*,34">
+  <Border Background="{DynamicResource WsHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="18,9">
    <Grid ColumnDefinitions="Auto,*,Auto">
-    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-     <Border Background="#48DCC4" CornerRadius="10" Width="40" Height="40"><TextBlock Text="W" FontWeight="Bold" FontSize="25" Foreground="#08231F" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-     <StackPanel Spacing="2"><TextBlock Text="WORSHIP STUDIO" FontWeight="Bold" FontSize="17" LetterSpacing="1.2"/><TextBlock Text="Crie. Opere. Inspire." Foreground="#7F8EA4" FontSize="11"/></StackPanel>
-     <Border Background="#19332F" CornerRadius="5" Padding="9,4" Margin="12,0,0,0" VerticalAlignment="Center"><TextBlock Text="OFFLINE" Foreground="#78E1C7" FontSize="10" FontWeight="SemiBold" LetterSpacing="1"/></Border>
+    <StackPanel Orientation="Horizontal" Spacing="11" VerticalAlignment="Center">
+     <Border Background="{DynamicResource WsAccent}" CornerRadius="7" Width="35" Height="35"><TextBlock Text="W" FontWeight="Bold" FontSize="22" Foreground="{DynamicResource WsAccentText}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+     <StackPanel Spacing="1"><TextBlock Text="WORSHIP STUDIO" FontWeight="SemiBold" FontSize="14" LetterSpacing="1.4"/><TextBlock Text="Letras para culto" Classes="muted" FontSize="10"/></StackPanel>
     </StackPanel>
     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-     <Button x:Name="BackupButton" Content="Backup" ToolTip.Tip="Salvar biblioteca, roteiro, cena e mídia em arquivo .wstudio"/>
-     <Button x:Name="RestoreButton" Content="Restaurar"/>
-     <Button x:Name="ExportButton" Content="Exportar MP4"/>
-     <Button x:Name="HelpButton" Content="?" Width="36" ToolTip.Tip="Guia de operação e atalhos"/>
+     <TextBlock Text="TEMA" Classes="caption" VerticalAlignment="Center" Margin="0,0,3,0"/>
+     <ComboBox x:Name="ThemeCombo" Width="150" MinHeight="32" AutomationProperties.Name="Tema do programa"/>
+     <Border Width="1" Background="{DynamicResource WsBorder}" Margin="6,3"/>
+     <Button x:Name="UpdateButton" Content="Atualizações" ToolTip.Tip="Verificar e instalar novas versões pelo aplicativo"/>
+     <Button x:Name="ExportButton" Content="Exportar MP4" Classes="primary"/>
+     <Button x:Name="HelpButton" Content="?" Width="34" ToolTip.Tip="Guia de operação e atalhos"/>
     </StackPanel>
    </Grid>
   </Border>
-  <Grid Grid.Row="1" ColumnDefinitions="250,*,305">
-   <Border Background="#111620" BorderBrush="#252D3A" BorderThickness="0,0,1,0" Padding="14,18,14,14">
+  <Border Grid.Row="1" Background="{DynamicResource WsSurface}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="12,3">
+   <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+    <Button x:Name="OperationWorkspaceButton" Content="▦  Operação" Classes="flat" FontWeight="SemiBold"/>
+    <Button x:Name="AnimationsWorkspaceButton" Grid.Column="1" Content="◇  Animações" Classes="flat"/>
+    <Button x:Name="ConnectionsWorkspaceButton" Grid.Column="2" Content="⇄  Conexões" Classes="flat"/>
+    <TextBlock x:Name="UpdateStatus" Grid.Column="4" Text="Operação offline · arquivos locais" Classes="muted" FontSize="10" VerticalAlignment="Center" Margin="12,0"/>
+   </Grid>
+  </Border>
+  <Grid Grid.Row="2" ColumnDefinitions="240,4,*,4,318">
+   <Border Background="{DynamicResource WsPanel}" Padding="12,16,12,12">
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto">
-     <TextBlock Text="BIBLIOTECA" Classes="caption" Margin="5,0,0,14"/>
-     <ComboBox x:Name="LibraryMode" Grid.Row="1" Margin="0,0,0,12" SelectedIndex="0"><ComboBoxItem Content="Todos os louvores"/><ComboBoxItem Content="Roteiro do culto"/></ComboBox>
+     <Grid ColumnDefinitions="*,Auto" Margin="3,0,0,13"><TextBlock Text="BIBLIOTECA" Classes="caption"/><TextBlock Grid.Column="1" Text="LOCAL" FontSize="9" Classes="muted"/></Grid>
+     <ComboBox x:Name="LibraryMode" Grid.Row="1" Margin="0,0,0,10" SelectedIndex="0"><ComboBoxItem Content="Todos os louvores"/><ComboBoxItem Content="Roteiro do culto"/></ComboBox>
      <TextBox x:Name="SearchBox" Grid.Row="2" Watermark="Buscar título ou letra…" Margin="0,0,0,10"/>
      <ListBox x:Name="LibraryList" Grid.Row="3" SelectionMode="Single">
-      <ListBox.ItemTemplate><DataTemplate DataType="m:Song"><StackPanel Spacing="4"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Artist}" FontSize="10" Foreground="#8190A6" TextTrimming="CharacterEllipsis"/></StackPanel></DataTemplate></ListBox.ItemTemplate>
+      <ListBox.ItemTemplate><DataTemplate DataType="m:Song"><StackPanel Spacing="4" Margin="0,3"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" FontSize="12"/><TextBlock Text="{Binding Artist}" FontSize="10" Classes="muted" TextTrimming="CharacterEllipsis"/></StackPanel></DataTemplate></ListBox.ItemTemplate>
      </ListBox>
      <StackPanel Grid.Row="4" Spacing="7" Margin="0,12,0,0">
-      <TextBlock x:Name="LibraryCount" Classes="muted" FontSize="10" Margin="4,0,0,5"/>
+      <TextBlock x:Name="LibraryCount" Classes="muted" FontSize="10" Margin="3,0,0,5"/>
       <Grid ColumnDefinitions="*,*"><Button x:Name="NewButton" Content="+ Novo" Classes="primary" Margin="0,0,4,0"/><Button x:Name="ImportButton" Grid.Column="1" Content="Importar" Margin="4,0,0,0"/></Grid>
       <Grid ColumnDefinitions="*,*"><Button x:Name="EditButton" Content="Editar" Margin="0,0,4,0"/><Button x:Name="DeleteButton" Grid.Column="1" Content="Excluir" Margin="4,0,0,0"/></Grid>
       <Button x:Name="AddSetButton" Content="+ Adicionar ao roteiro" HorizontalAlignment="Stretch"/>
      </StackPanel>
      <StackPanel Grid.Row="5" x:Name="SetlistTools" Orientation="Horizontal" Spacing="6" Margin="0,7,0,0" IsVisible="False"><Button x:Name="SetUpButton" Content="↑"/><Button x:Name="SetDownButton" Content="↓"/><Button x:Name="SetRemoveButton" Content="Remover"/></StackPanel>
-     <Border Grid.Row="6" Background="#1A2230" CornerRadius="7" Padding="10" Margin="0,16,0,0"><TextBlock Text="Duplo clique envia o louvor ao vivo. A seleção simples prepara a prévia." FontSize="10" Foreground="#8F9EB4" TextWrapping="Wrap"/></Border>
+     <TextBlock Grid.Row="6" Text="Um clique prepara. Duplo clique projeta." FontSize="10" Classes="muted" TextWrapping="Wrap" Margin="3,14,0,2"/>
     </Grid>
    </Border>
-   <Grid Grid.Column="1" RowDefinitions="Auto,2.2*,Auto,Auto,Auto,*" Margin="22,18,22,16">
-    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" Margin="0,0,0,14">
-     <TextBlock x:Name="SelectedTitle" Text="Selecione um louvor" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-     <TextBlock x:Name="SelectedArtist" Grid.Row="1" Foreground="#8997AC" FontSize="11" Margin="0,5,0,0"/>
-     <StackPanel Grid.Column="1" Grid.RowSpan="2" VerticalAlignment="Center" Spacing="4"><TextBlock Text="PRÉVIA" Classes="caption" HorizontalAlignment="Right"/><TextBlock Text="1920 × 1080 · 16:9" Classes="muted" FontSize="10"/></StackPanel>
+   <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="{DynamicResource WsBorder}"/>
+   <Grid Grid.Column="2" RowDefinitions="Auto,1.4*,Auto,Auto,*" Margin="16,15,16,12">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+     <StackPanel Spacing="3"><TextBlock x:Name="SelectedTitle" Text="Selecione um louvor" FontSize="22" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="SelectedArtist" Classes="muted" FontSize="11"/></StackPanel>
+     <TextBlock Grid.Column="1" Text="16:9 · FULL HD" Classes="caption" VerticalAlignment="Center" Margin="10,0,0,0"/>
     </Grid>
-    <Border Grid.Row="1" BorderBrush="#354357" BorderThickness="1" CornerRadius="10" Background="Black" ClipToBounds="True">
-     <controls:AspectRatioPanel><ContentControl x:Name="PreviewHost"/></controls:AspectRatioPanel>
-    </Border>
-    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,12,0,12">
-     <StackPanel VerticalAlignment="Center" Spacing="4"><TextBlock x:Name="PreviewPosition" Text="Nenhuma estrofe selecionada" Foreground="#A7B4C6" FontSize="11"/><TextBlock Text="Selecione abaixo para preparar a próxima letra" FontSize="10" Foreground="#68778F"/></StackPanel>
-     <Button Grid.Column="1" x:Name="SendButton" Content="Projetar estrofe  ↗" Classes="primary"/>
+    <Grid Grid.Row="1" ColumnDefinitions="*,12,*">
+     <Grid RowDefinitions="Auto,*,Auto">
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,9"><TextBlock Text="PRÉVIA" Classes="caption"/><TextBlock Grid.Column="1" Text="PREPARAR" Classes="muted" FontSize="9"/></Grid>
+      <Border Grid.Row="1" BorderBrush="{DynamicResource WsBorder}" BorderThickness="1" CornerRadius="5" Background="Black" ClipToBounds="True"><controls:AspectRatioPanel><ContentControl x:Name="PreviewHost"/></controls:AspectRatioPanel></Border>
+      <TextBlock x:Name="PreviewPosition" Grid.Row="2" Text="Nenhuma estrofe selecionada" Classes="muted" FontSize="10" Margin="0,9,0,0" TextTrimming="CharacterEllipsis"/>
+     </Grid>
+     <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto">
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,9"><TextBlock x:Name="LiveLabel" Text="SAÍDA FECHADA" FontSize="10" Foreground="{DynamicResource WsLive}" FontWeight="SemiBold" LetterSpacing="1"/><TextBlock Grid.Column="1" Text="RETORNO" Classes="muted" FontSize="9"/></Grid>
+      <Border Grid.Row="1" BorderBrush="{DynamicResource WsLive}" BorderThickness="1" CornerRadius="5" Background="Black" ClipToBounds="True"><controls:AspectRatioPanel><ContentControl x:Name="LivePreviewHost"/></controls:AspectRatioPanel></Border>
+      <TextBlock x:Name="LiveSummary" Grid.Row="2" Text="Abra a projeção para começar" Classes="muted" FontSize="10" Margin="0,9,0,0" TextTrimming="CharacterEllipsis"/>
+     </Grid>
     </Grid>
-    <Border Grid.Row="3" Classes="panel" Padding="13,10" Margin="0,0,0,12">
-     <Grid ColumnDefinitions="*,Auto">
-      <StackPanel Spacing="5"><StackPanel Orientation="Horizontal" Spacing="7"><Ellipse Width="6" Height="6" Fill="#FF6E85" VerticalAlignment="Center"/><TextBlock x:Name="LiveLabel" Text="SAÍDA FECHADA" FontSize="10" FontWeight="SemiBold" Foreground="#FF9BAA" LetterSpacing="1"/></StackPanel><TextBlock x:Name="LiveSummary" Text="Abra a projeção para começar" TextTrimming="CharacterEllipsis" MaxWidth="420" FontSize="11"/></StackPanel>
-      <Button Grid.Column="1" x:Name="OpenProjectionButton" Content="Abrir projeção" VerticalAlignment="Center"/>
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,14,0,15">
+     <Button x:Name="OpenProjectionButton" Content="Abrir projeção" HorizontalAlignment="Left"/>
+     <Button x:Name="ReplayButton" Grid.Column="1" Content="↻ Testar" Classes="flat" ToolTip.Tip="Recomeçar a animação na prévia" Margin="0,0,7,0"/>
+     <Button x:Name="SendButton" Grid.Column="2" Content="Projetar estrofe  ↗" Classes="primary"/>
+    </Grid>
+    <Border Grid.Row="3" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,1,0,1" Padding="0,10" Margin="0,0,0,13">
+     <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+      <Button x:Name="PrevButton" Content="←" Width="38" Margin="0,0,6,0" ToolTip.Tip="Estrofe anterior · seta esquerda"/>
+      <Button x:Name="NextButton" Grid.Column="1" Content="Próxima →" ToolTip.Tip="Seta direita ou espaço"/>
+      <Button x:Name="HideButton" Grid.Column="3" Content="Ocultar letra" Margin="6,0" ToolTip.Tip="Atalho L"/>
+      <Button x:Name="BlackButton" Grid.Column="4" Content="Tela preta" Classes="danger" ToolTip.Tip="Atalho B"/>
      </Grid>
     </Border>
-    <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,0,0,12">
-     <Button x:Name="PrevButton" Content="← Anterior" Margin="0,0,6,0" ToolTip.Tip="Seta esquerda"/>
-     <Button x:Name="NextButton" Grid.Column="1" Content="Próxima →" ToolTip.Tip="Seta direita ou espaço"/>
-     <Button x:Name="HideButton" Grid.Column="3" Content="Ocultar letra" Margin="6,0,6,0" ToolTip.Tip="Atalho L"/>
-     <Button x:Name="BlackButton" Grid.Column="4" Content="Tela preta" Classes="danger" ToolTip.Tip="Atalho B"/>
-    </Grid>
-    <Grid Grid.Row="5" RowDefinitions="Auto,*">
-     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8"><TextBlock Text="ESTROFES" Classes="caption"/><TextBlock Grid.Column="1" Text="CLIQUE: PRÉVIA  ·  DUPLO CLIQUE: AO VIVO" FontSize="9" Foreground="#66768D"/></Grid>
+    <Grid Grid.Row="4" RowDefinitions="Auto,*">
+     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10"><TextBlock Text="SEQUÊNCIA DE ESTROFES" Classes="caption"/><TextBlock Grid.Column="1" Text="CLIQUE: PRÉVIA  ·  DUPLO CLIQUE: AO VIVO" FontSize="9" Classes="muted"/></Grid>
      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><WrapPanel x:Name="SlidesPanel" Orientation="Horizontal"/></ScrollViewer>
     </Grid>
    </Grid>
-   <Border Grid.Column="2" Background="#111620" BorderBrush="#252D3A" BorderThickness="1,0,0,0">
-    <TabControl Margin="8,8,8,0">
+   <GridSplitter Grid.Column="3" ResizeDirection="Columns" Background="{DynamicResource WsBorder}"/>
+   <Border Grid.Column="4" Background="{DynamicResource WsPanel}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="1,0,0,0">
+    <TabControl x:Name="InspectorTabs" Margin="7,5,7,0">
      <TabItem Header="Cena">
       <ScrollViewer VerticalScrollBarVisibility="Auto">
        <StackPanel Spacing="10" Margin="8,12,8,18">
         <TextBlock Text="SAÍDA DE VÍDEO" Classes="caption"/>
         <ComboBox x:Name="MonitorCombo"/>
-        <TextBlock Text="A projeção abre em tela cheia no monitor escolhido. F11 alterna a janela; Esc sai da tela cheia." FontSize="10" Foreground="#8493A9" TextWrapping="Wrap"/>
-        <Border Height="1" Background="#293140" Margin="0,4"/>
+        <TextBlock Text="A projeção abre em tela cheia no monitor escolhido. F11 alterna a janela; Esc sai da tela cheia." FontSize="10" Foreground="{DynamicResource WsMuted}" TextWrapping="Wrap"/>
+        <Border Height="1" Background="{DynamicResource WsBorder}" Margin="0,4"/>
         <TextBlock Text="FUNDO &amp; MOVIMENTO" Classes="caption"/>
         <ComboBox x:Name="BackgroundCombo"/>
         <Button x:Name="MediaButton" Content="Escolher imagem ou vídeo…" HorizontalAlignment="Stretch"/>
-        <TextBlock x:Name="MediaLabel" Text="Efeito procedural · sem arquivo externo" FontSize="10" Foreground="#7E90A8" TextWrapping="Wrap" MaxLines="2"/>
+        <TextBlock x:Name="MediaLabel" Text="Efeito procedural · sem arquivo externo" FontSize="10" Foreground="{DynamicResource WsMuted}" TextWrapping="Wrap" MaxLines="2"/>
         <Button x:Name="RestartVideoButton" Content="Reiniciar vídeo do fundo" HorizontalAlignment="Stretch"/>
         <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Escurecer fundo"/><TextBlock x:Name="DimValue" Grid.Column="1" Classes="muted"/></Grid><Slider x:Name="DimSlider" Minimum="0" Maximum="1" Value="0.35"/>
         <TextBlock Text="Velocidade do movimento"/><Slider x:Name="SpeedSlider" Minimum="0" Maximum="4" Value="1"/>
         <Grid ColumnDefinitions="*,*"><StackPanel Margin="0,0,5,0" Spacing="5"><TextBlock Text="Cor do efeito" FontSize="10"/><controls:ColorField x:Name="AccentField" Value="#48DCC4" Caption="Cor do efeito"/></StackPanel><StackPanel Grid.Column="1" Margin="5,0,0,0" Spacing="5"><TextBlock Text="Cor do fundo" FontSize="10"/><controls:ColorField x:Name="BackgroundColorField" Value="#08121F" Caption="Cor do fundo"/></StackPanel></Grid>
-        <Border Height="1" Background="#293140" Margin="0,4"/>
+        <Border Height="1" Background="{DynamicResource WsBorder}" Margin="0,4"/>
         <TextBlock Text="TIPOGRAFIA DA LETRA" Classes="caption"/>
         <ComboBox x:Name="FontCombo" MaxDropDownHeight="260" AutomationProperties.Name="Fonte da letra">
          <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" FontFamily="{Binding}" FontSize="15" TextTrimming="CharacterEllipsis"/></DataTemplate></ComboBox.ItemTemplate>
         </ComboBox>
         <CheckBox x:Name="BoldCheck" Content="Negrito" FontWeight="Bold" IsChecked="True"/>
         <Grid ColumnDefinitions="*,*"><StackPanel Margin="0,0,5,0" Spacing="5"><TextBlock Text="Tamanho (1080p)" FontSize="10"/><NumericUpDown x:Name="FontSizeInput" Minimum="24" Maximum="140" Value="64" Increment="2"/></StackPanel><StackPanel Grid.Column="1" Margin="5,0,0,0" Spacing="5"><TextBlock Text="Cor da letra" FontSize="10"/><controls:ColorField x:Name="TextColorField" Value="#FFFFFF" Caption="Cor da letra"/></StackPanel></Grid>
-        <Border Background="#192231" CornerRadius="6" Padding="10"><TextBlock x:Name="FontSample" Text="Adoração · Aa Bb Cc" FontSize="18" TextWrapping="Wrap" HorizontalAlignment="Center"/></Border>
+        <Border Background="#101216" CornerRadius="6" Padding="10"><TextBlock x:Name="FontSample" Text="Adoração · Aa Bb Cc" FontSize="18" TextWrapping="Wrap" HorizontalAlignment="Center"/></Border>
         <TextBlock Text="Posição vertical"/><Slider x:Name="TextYSlider" Minimum="0.1" Maximum="0.9" Value="0.5"/>
-        <Border Height="1" Background="#293140" Margin="0,4"/>
+        <Border Height="1" Background="{DynamicResource WsBorder}" Margin="0,4"/>
         <TextBlock Text="ANIMAÇÕES DAS LETRAS" Classes="caption"/>
-        <Button x:Name="AnimationGalleryButton" Content="Abrir galeria · animações granulares" Classes="primary" HorizontalAlignment="Stretch" FontSize="11"/>
-        <TextBlock x:Name="PresetSummary" Text="Entrada clássica" TextWrapping="Wrap" FontSize="11" Foreground="#B3A3DE"/>
+        <Button x:Name="AnimationGalleryButton" Content="Galeria de animações  ↗" Classes="primary" HorizontalAlignment="Stretch" FontSize="11"/>
+        <TextBlock x:Name="PresetSummary" Text="Entrada clássica" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource WsAccentLabel}"/>
         <CheckBox x:Name="PresetModeCheck" Content="Usar animação granular"/>
         <StackPanel x:Name="LegacyEntrancePanel" Spacing="10">
         <TextBlock Text="Entrada da letra" FontSize="11"/>
         <ComboBox x:Name="TransitionCombo" AutomationProperties.Name="Animação de entrada"/>
         <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Duração da transição"/><TextBlock x:Name="DurationValue" Grid.Column="1" Classes="muted"/></Grid><Slider x:Name="DurationSlider" Minimum="0" Maximum="3" Value="0.6"/>
         </StackPanel>
-        <Button x:Name="ReplayButton" Content="Testar animação na prévia" HorizontalAlignment="Stretch"/>
+        <Button x:Name="ReplayInspectorButton" Content="Testar animação na prévia" HorizontalAlignment="Stretch"/>
         <StackPanel x:Name="LegacyMotionPanel" Spacing="10">
         <TextBlock Text="Animação contínua" FontSize="11"/>
         <ComboBox x:Name="LetterAnimationCombo" AutomationProperties.Name="Animação contínua da letra"/>
@@ -109,14 +125,14 @@
         <Slider x:Name="LetterSpeedSlider" Minimum="0.2" Maximum="3" Value="1"/>
         <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Intensidade da animação" FontSize="11"/><TextBlock x:Name="LetterIntensityValue" Grid.Column="1" Classes="muted"/></Grid>
         <Slider x:Name="LetterIntensitySlider" Minimum="0" Maximum="1" Value="0.5"/>
-        <TextBlock Text="Combine uma entrada com um efeito contínuo. A velocidade da letra é independente do fundo. As animações também aparecem na projeção e no MP4." TextWrapping="Wrap" FontSize="10" Foreground="#7F90A8"/>
+        <TextBlock Text="Combine uma entrada com um efeito contínuo. A velocidade da letra é independente do fundo. As animações também aparecem na projeção e no MP4." TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource WsMuted}"/>
         </StackPanel>
         <Grid ColumnDefinitions="*,*"><Button x:Name="SaveStyleButton" Content="Salvar cena" Margin="0,0,4,0"/><Button x:Name="LoadStyleButton" Grid.Column="1" Content="Carregar" Margin="4,0,0,0"/></Grid>
-        <Border Height="1" Background="#293140" Margin="0,4"/>
+        <Border Height="1" Background="{DynamicResource WsBorder}" Margin="0,4"/>
         <TextBlock Text="REAÇÃO AO ÁUDIO" Classes="caption"/>
         <ToggleSwitch x:Name="AudioToggle" Content="Sincronizar efeitos"/>
         <ComboBox x:Name="AudioSourceCombo" SelectedIndex="0"><ComboBoxItem Content="Som do computador (loopback)"/><ComboBoxItem Content="Entrada padrão / microfone"/></ComboBox>
-        <ProgressBar x:Name="AudioMeter" Minimum="0" Maximum="1" Height="5" Foreground="#48DCC4"/>
+        <ProgressBar x:Name="AudioMeter" Minimum="0" Maximum="1" Height="5" Foreground="{DynamicResource WsAccent}"/>
         <TextBlock Text="Sensibilidade" FontSize="11"/><Slider x:Name="GainSlider" Minimum="0.5" Maximum="10" Value="3"/>
         <Button x:Name="BeatButton" Content="Pulso manual" HorizontalAlignment="Stretch"/>
        </StackPanel>
@@ -125,26 +141,46 @@
      <TabItem Header="Conexões">
       <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="8,12,8,18" Spacing="12">
        <TextBlock Text="CONTROLE PELO CELULAR" Classes="caption"/>
-       <TextBlock Text="Conecte o celular ao mesmo Wi-Fi e abra um dos endereços abaixo no navegador. O link contém a chave de acesso." TextWrapping="Wrap" Foreground="#8F9EB4" FontSize="11"/>
+       <TextBlock Text="Conecte o celular ao mesmo Wi-Fi e abra um dos endereços abaixo no navegador. O link contém a chave de acesso." TextWrapping="Wrap" Foreground="{DynamicResource WsMuted}" FontSize="11"/>
        <NumericUpDown x:Name="RemotePortInput" Minimum="1024" Maximum="65535" Value="8765" FormatString="0"/>
        <Button x:Name="RemoteButton" Content="Iniciar controle remoto" Classes="primary" HorizontalAlignment="Stretch"/>
        <TextBox x:Name="RemoteAddress" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="110" Text="Controle remoto desligado"/>
        <Button x:Name="CopyRemoteButton" Content="Copiar endereço"/>
-       <TextBlock Text="Se o Windows solicitar, permita o acesso à rede privada. O controle usa apenas a rede local." TextWrapping="Wrap" FontSize="10" Foreground="#7F90A8"/>
-       <Border Height="1" Background="#293140" Margin="0,8"/>
+       <TextBlock Text="Se o Windows solicitar, permita o acesso à rede privada. O controle usa apenas a rede local." TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource WsMuted}"/>
+       <Border Height="1" Background="{DynamicResource WsBorder}" Margin="0,8"/>
        <TextBlock Text="HOLYRICS · API SERVER" Classes="caption"/>
-       <TextBlock Text="Ative o API Server no Holyrics. Informe o endereço e o token com permissão de leitura. Você pode importar a biblioteca ou acompanhar a letra projetada." TextWrapping="Wrap" FontSize="11" Foreground="#8F9EB4"/>
+       <TextBlock Text="Ative o API Server no Holyrics. Informe o endereço e o token com permissão de leitura. Você pode importar a biblioteca ou acompanhar a letra projetada." TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource WsMuted}"/>
        <TextBox x:Name="HolyricsUrl" Watermark="http://192.168.1.10:8091" Text="http://127.0.0.1:8091"/>
        <TextBox x:Name="HolyricsToken" Watermark="Token da API" PasswordChar="●"/>
        <Button x:Name="HolyricsImportButton" Content="Importar biblioteca via API" HorizontalAlignment="Stretch"/>
        <ToggleSwitch x:Name="HolyricsFollowToggle" Content="Seguir apresentação"/>
-       <TextBlock x:Name="HolyricsStatus" Text="Desconectado" TextWrapping="Wrap" FontSize="10" Foreground="#8D9BB0"/>
-       <TextBlock Text="Também é possível importar TXT, JSON e OpenLyrics XML pelo botão Importar. Arquivos .hcb e .hcc não são suportados." TextWrapping="Wrap" FontSize="10" Foreground="#7F90A8"/>
+       <TextBlock x:Name="HolyricsStatus" Text="Desconectado" TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource WsMuted}"/>
+       <TextBlock Text="Também é possível importar TXT, JSON e OpenLyrics XML pelo botão Importar. Arquivos .hcb e .hcc não são suportados." TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource WsMuted}"/>
+      </StackPanel></ScrollViewer>
+     </TabItem>
+     <TabItem Header="App">
+      <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="10,16" Spacing="14">
+       <TextBlock Text="PREFERÊNCIAS" Classes="caption"/>
+       <TextBlock Text="Seu espaço de operação" FontSize="19" FontWeight="SemiBold"/>
+       <TextBlock Text="Mude o tema no topo da janela. As preferências ficam salvas neste computador e não alteram as cores da projeção." TextWrapping="Wrap" Classes="muted" FontSize="12"/>
+       <Border Height="1" Background="{DynamicResource WsBorder}"/>
+       <TextBlock Text="ATUALIZAÇÕES" Classes="caption"/>
+       <TextBlock x:Name="VersionLabel" FontWeight="SemiBold"/>
+       <CheckBox x:Name="AutoUpdateCheck" Content="Buscar atualizações ao abrir" IsChecked="True"/>
+       <TextBlock Text="Consulta as versões públicas do Letras para culto no GitHub. Sem internet, todas as funções de operação continuam disponíveis." TextWrapping="Wrap" Classes="muted" FontSize="11"/>
+       <Button x:Name="CheckUpdatesButton" Content="Verificar atualizações" HorizontalAlignment="Stretch"/>
+       <TextBlock x:Name="UpdateDetails" Text="Nenhuma consulta realizada nesta sessão." TextWrapping="Wrap" Classes="muted" FontSize="11"/>
+       <Border Height="1" Background="{DynamicResource WsBorder}"/>
+       <TextBlock Text="BIBLIOTECA LOCAL" Classes="caption"/>
+       <Button x:Name="BackupButton" Content="Salvar backup completo" HorizontalAlignment="Stretch"/>
+       <Button x:Name="RestoreButton" Content="Restaurar backup…" HorizontalAlignment="Stretch"/>
+       <TextBlock Text="Inclui biblioteca, roteiro, cena e mídia. Faça um backup antes de operar em outro computador." TextWrapping="Wrap" Classes="muted" FontSize="11"/>
       </StackPanel></ScrollViewer>
      </TabItem>
     </TabControl>
    </Border>
+
   </Grid>
-  <Border Grid.Row="2" Background="#151B26" BorderBrush="#293140" BorderThickness="0,1,0,0" Padding="17,6"><Grid ColumnDefinitions="*,Auto"><TextBlock x:Name="StatusText" Text="Pronto" FontSize="11" Foreground="#91A3B9" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Text="← → navegar   ·   B tela preta   ·   L letra   ·   F11 projeção" FontSize="10" Foreground="#64748B"/></Grid></Border>
+  <Border Grid.Row="3" Background="{DynamicResource WsHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,1,0,0" Padding="14,6"><Grid ColumnDefinitions="*,Auto"><TextBlock x:Name="StatusText" Text="Pronto" FontSize="10" Classes="muted" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Text="← → navegar   ·   B tela preta   ·   L letra   ·   F11 projeção" FontSize="10" Classes="muted" Margin="12,0,0,0"/></Grid></Border>
  </Grid>
 </Window>

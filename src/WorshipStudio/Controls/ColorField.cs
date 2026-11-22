@@ -3,6 +3,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 
 namespace WorshipStudio.Controls;
@@ -40,7 +41,7 @@ public sealed class ColorField : UserControl
         _swatch = new Border
         {
             Width = 21, Height = 21, CornerRadius = new CornerRadius(4),
-            BorderBrush = Brush.Parse("#607086"), BorderThickness = new Thickness(1)
+            [!Border.BorderBrushProperty] = new DynamicResourceExtension("WsBorder"), BorderThickness = new Thickness(1)
         };
         _hex = new TextBlock { FontSize = 10, VerticalAlignment = VerticalAlignment.Center };
         var row = new Grid { ColumnDefinitions = new ColumnDefinitions("21,7,*,Auto") };
@@ -108,10 +109,10 @@ public sealed class ColorField : UserControl
                 }
             }
         };
-        var preview = new Border { Height = 38, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), BorderBrush = Brush.Parse("#68778D") };
+        var preview = new Border { Height = 38, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), [!Border.BorderBrushProperty] = new DynamicResourceExtension("WsBorder") };
         var hex = new TextBox { Watermark = "#FFFFFF", MaxLength = 9, FontFamily = new FontFamily("Consolas"), HorizontalAlignment = HorizontalAlignment.Stretch };
         AutomationProperties.SetName(hex, "Código hexadecimal da cor");
-        var error = new TextBlock { Foreground = Brush.Parse("#FF9BAA"), FontSize = 10, TextWrapping = TextWrapping.Wrap, IsVisible = false };
+        var error = new TextBlock { [!TextBlock.ForegroundProperty] = new DynamicResourceExtension("WsDangerText"), FontSize = 10, TextWrapping = TextWrapping.Wrap, IsVisible = false };
         var red = ChannelSlider("Vermelho");
         var green = ChannelSlider("Verde");
         var blue = ChannelSlider("Azul");
@@ -182,7 +183,7 @@ public sealed class ColorField : UserControl
             var chip = new Button
             {
                 Width = 39, Height = 29, MinHeight = 29, Padding = new Thickness(0), Margin = new Thickness(2),
-                Background = new SolidColorBrush(color), BorderBrush = Brush.Parse("#617086"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(5)
+                Background = new SolidColorBrush(color), [!Button.BorderBrushProperty] = new DynamicResourceExtension("WsBorder"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(5)
             };
             ToolTip.SetTip(chip, code);
             AutomationProperties.SetName(chip, "Escolher " + code);
@@ -197,7 +198,7 @@ public sealed class ColorField : UserControl
         previewRow.Children.Add(preview); Grid.SetColumn(hex, 2); previewRow.Children.Add(hex);
         var body = new StackPanel { Margin = new Thickness(23), Spacing = 9 };
         body.Children.Add(new TextBlock { Text = Caption, FontSize = 23, FontWeight = FontWeight.SemiBold });
-        body.Children.Add(new TextBlock { Text = "A prévia e a projeção acompanham os ajustes em tempo real.", FontSize = 11, TextWrapping = TextWrapping.Wrap, Foreground = Brush.Parse("#91A2B9"), Margin = new Thickness(0, 0, 0, 4) });
+        body.Children.Add(new TextBlock { Text = "A prévia e a projeção acompanham os ajustes em tempo real.", FontSize = 11, TextWrapping = TextWrapping.Wrap, [!TextBlock.ForegroundProperty] = new DynamicResourceExtension("WsMuted"), Margin = new Thickness(0, 0, 0, 4) });
         body.Children.Add(spectrum);
         body.Children.Add(new TextBlock { Text = "MATIZ", Classes = { "caption" } });
         body.Children.Add(hueBar); body.Children.Add(hue);
@@ -238,7 +239,7 @@ public sealed class ColorField : UserControl
         var row = new Grid { ColumnDefinitions = new ColumnDefinitions("66,*,30"), MinHeight = 25 };
         row.Children.Add(new TextBlock { Text = label, FontSize = 11, VerticalAlignment = VerticalAlignment.Center });
         Grid.SetColumn(slider, 1); row.Children.Add(slider);
-        value.FontSize = 11; value.Foreground = Brush.Parse("#A8B6CA"); value.HorizontalAlignment = HorizontalAlignment.Right; value.VerticalAlignment = VerticalAlignment.Center;
+        value.FontSize = 11; value.Bind(TextBlock.ForegroundProperty,new DynamicResourceExtension("WsMuted")); value.HorizontalAlignment = HorizontalAlignment.Right; value.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(value, 2); row.Children.Add(value);
         return row;
     }
@@ -303,7 +304,8 @@ public sealed class ColorField : UserControl
             var point = new Point(Saturation * rect.Width, (1 - Brightness) * rect.Height);
             context.DrawEllipse(null, new Pen(Brushes.Black, 3), point, 6, 6);
             context.DrawEllipse(null, new Pen(Brushes.White, 1.5), point, 6, 6);
-            if (IsKeyboardFocusWithin) context.DrawRectangle(null, new Pen(Brush.Parse("#48DCC4"), 2), rect.Deflate(1));
+            if (IsKeyboardFocusWithin && this.TryFindResource("WsAccent", ActualThemeVariant, out var accent) && accent is IBrush accentBrush)
+                context.DrawRectangle(null, new Pen(accentBrush, 2), rect.Deflate(1));
         }
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {

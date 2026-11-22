@@ -1,6 +1,24 @@
 # Histórico de mudanças
 
-O projeto é publicado como **Letras para culto**. As três primeiras distribuições usam **Worship Studio** como nome do aplicativo e dos arquivos. As versões foram preparadas em 22/11/2026.
+O projeto é publicado como **Letras para culto**. O aplicativo e os arquivos mantêm o nome **Worship Studio**, preservando a atualização das instalações existentes. As versões 1.0 a 1.3 foram preparadas em 22/11/2026.
+
+## 1.3.0 — Novo espaço de operação, temas e atualizações
+
+- Reorganizado o espaço de operação com inspiração em estações de edição como o DaVinci: biblioteca à esquerda, prévia e retorno ao vivo, estrofes e inspetor de cena/conexões.
+- Adicionados retorno visual do estado enviado à projeção e divisórias para redimensionar os painéis, mantendo a preparação independente da saída ao vivo.
+- Adicionados os temas **Branco**, **Escuro**, **Cinza** e **Amarelo pastel**, com aplicação imediata, diálogos adaptados e preferência persistente separada da biblioteca.
+- Adicionado atualizador pelo GitHub: consulta da última Release estável ao abrir e a cada seis horas, opção de desligar a busca automática e verificação manual.
+- Adicionados notas da versão no aplicativo, download com progresso/cancelamento e verificação do instalador por tamanho, manifesto SHA-256 e digest do GitHub quando disponível.
+- A instalação requer um comando explícito e confirmação do operador; o aplicativo salva a biblioteca, abre o instalador e encerra a operação.
+- Preservada a operação offline quando a rede ou o serviço de atualizações estiverem indisponíveis.
+- Documentado o protocolo de publicação das próximas versões, com tag, instalador, código-fonte completo e manifesto de hashes na mesma Release pública.
+- Adicionado `package-release.ps1`, que executa os testes e gera instalador, ZIP completo e manifesto SHA-256; a versão do projeto C# orienta os nomes dos três arquivos e a versão do instalador.
+- Validação automatizada: **225 aprovações, zero falhas** — 93 de núcleo (44 anteriores, 36 do atualizador e 13 de preferências/contraste), 108 visuais e 24 de interface com o aplicativo real em Avalonia Headless/Skia.
+- Validado também o download HTTP real do instalador 1.2.0 publicado no GitHub, com tamanho de 151.413.199 bytes e SHA-256 correto, sem executar o arquivo. Esta integração é separada do contador de 225.
+
+**Migração:** as versões até a 1.2 não possuem atualizador. Instale a 1.3 uma vez pela Release; as próximas atualizações podem ser obtidas no aplicativo.
+
+[Notas da versão 1.3.0](docs/releases/v1.3.0.md) · [Publicação no GitHub](docs/PUBLICACAO.md).
 
 ## 1.2.0 — Granularidade e galeria de animações
 

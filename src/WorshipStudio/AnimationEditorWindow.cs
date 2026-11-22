@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 using Avalonia.Threading;
 using WorshipStudio.Controls;
@@ -30,11 +31,11 @@ public sealed class AnimationEditorWindow : Window
     private readonly CheckBox _loop=new(){Content="Repetir na projeção"};
     private readonly TextBox _text=new(){AcceptsReturn=true,TextWrapping=TextWrapping.Wrap,MinHeight=72,MaxHeight=108};
     private readonly TextBlock _title=new(){FontSize=21,FontWeight=FontWeight.SemiBold,TextWrapping=TextWrapping.Wrap};
-    private readonly TextBlock _summary=new(){FontSize=11,Foreground=Brush.Parse("#94A3BB"),TextWrapping=TextWrapping.Wrap};
-    private readonly TextBlock _strengthValue=new(){Foreground=Brush.Parse("#A895FF"),FontSize=11};
-    private readonly TextBlock _count=new(){FontSize=10,Foreground=Brush.Parse("#8B9BB1")};
+    private readonly TextBlock _summary=new(){FontSize=11,[!TextBlock.ForegroundProperty]=new DynamicResourceExtension("WsMuted"),TextWrapping=TextWrapping.Wrap};
+    private readonly TextBlock _strengthValue=new(){[!TextBlock.ForegroundProperty]=new DynamicResourceExtension("WsAccentLabel"),FontSize=11};
+    private readonly TextBlock _count=new(){FontSize=10,[!TextBlock.ForegroundProperty]=new DynamicResourceExtension("WsMuted")};
     private readonly Slider _timeline=new(){Minimum=0,Maximum=1,Value=0};
-    private readonly TextBlock _timeLabel=new(){FontSize=10,Foreground=Brush.Parse("#8B9BB1")};
+    private readonly TextBlock _timeLabel=new(){FontSize=10,[!TextBlock.ForegroundProperty]=new DynamicResourceExtension("WsMuted")};
     private readonly Button _play=new(){Content="Pausar"};
     private readonly DispatcherTimer _timer;
     private readonly Stopwatch _clock=Stopwatch.StartNew();
@@ -56,7 +57,7 @@ public sealed class AnimationEditorWindow : Window
         var shell=new Grid{RowDefinitions=new RowDefinitions("Auto,*,Auto")};
         var heading=new StackPanel{Margin=new Thickness(24,20,24,16),Spacing=5};
         heading.Children.Add(new TextBlock{Text="Animações das letras",FontSize=27,FontWeight=FontWeight.SemiBold});
-        heading.Children.Add(new TextBlock{Text="Escolha um estilo e controle como cada letra, palavra ou linha entra em cena.",Foreground=Brush.Parse("#91A2B8"),FontSize=12});
+        heading.Children.Add(new TextBlock{Text="Escolha um estilo e controle como cada letra, palavra ou linha entra em cena.",[!TextBlock.ForegroundProperty]=new DynamicResourceExtension("WsMuted"),FontSize=12});
         shell.Children.Add(heading);
         var columns=new Grid{ColumnDefinitions=new ColumnDefinitions("1.65*,1*"),Margin=new Thickness(20,0,20,0)};
         Grid.SetRow(columns,1);shell.Children.Add(columns);
@@ -88,11 +89,11 @@ public sealed class AnimationEditorWindow : Window
         editor.Children.Add(Field("CURVA DO MOVIMENTO",_easing));
         var strengthHeader=new Grid{ColumnDefinitions=new ColumnDefinitions("*,Auto")};strengthHeader.Children.Add(new TextBlock{Text="Intensidade do efeito"});Grid.SetColumn(_strengthValue,1);strengthHeader.Children.Add(_strengthValue);
         editor.Children.Add(strengthHeader);editor.Children.Add(_strength);editor.Children.Add(_loop);
-        editor.Children.Add(new TextBlock{Text="A prévia repete o efeito para facilitar o ajuste. O botão Repetir na projeção controla a saída ao vivo e o MP4. As mudanças só entram na cena ao aplicar.",FontSize=10,Foreground=Brush.Parse("#8394AD"),TextWrapping=TextWrapping.Wrap});
+        editor.Children.Add(new TextBlock{Text="A prévia repete o efeito para facilitar o ajuste. O botão Repetir na projeção controla a saída ao vivo e o MP4. As mudanças só entram na cena ao aplicar.",FontSize=10,[!TextBlock.ForegroundProperty]=new DynamicResourceExtension("WsMuted"),TextWrapping=TextWrapping.Wrap});
         var rightScroll=new ScrollViewer{Content=editor,HorizontalScrollBarVisibility=Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,VerticalScrollBarVisibility=Avalonia.Controls.Primitives.ScrollBarVisibility.Auto};
         Grid.SetColumn(rightScroll,1);columns.Children.Add(rightScroll);
         var footer=new Grid{ColumnDefinitions=new ColumnDefinitions("*,Auto,10,Auto"),Margin=new Thickness(24,14,24,18)};
-        footer.Children.Add(new TextBlock{Text="Passe o mouse nos cartões para ver o movimento.",FontSize=11,Foreground=Brush.Parse("#8696AE"),VerticalAlignment=VerticalAlignment.Center});
+        footer.Children.Add(new TextBlock{Text="Passe o mouse nos cartões para ver o movimento.",FontSize=11,[!TextBlock.ForegroundProperty]=new DynamicResourceExtension("WsMuted"),VerticalAlignment=VerticalAlignment.Center});
         var cancel=new Button{Content="Cancelar"};var apply=new Button{Content="Aplicar à cena",Classes={"primary"}};
         Grid.SetColumn(cancel,1);Grid.SetColumn(apply,3);footer.Children.Add(cancel);footer.Children.Add(apply);Grid.SetRow(footer,2);shell.Children.Add(footer);Content=shell;
         _preview.AnimationEnabled=false;
@@ -149,8 +150,8 @@ public sealed class AnimationEditorWindow : Window
             var stack=new StackPanel{Spacing=7};
             stack.Children.Add(new Border{Background=Brushes.Black,CornerRadius=new CornerRadius(6),ClipToBounds=true,Child=renderer});
             stack.Children.Add(new TextBlock{Text=preset.Name,FontSize=12,FontWeight=FontWeight.SemiBold,TextWrapping=TextWrapping.Wrap,MinHeight=30});
-            stack.Children.Add(new TextBlock{Text=preset.CategoryLabel.ToUpperInvariant(),FontSize=9,LetterSpacing=1,Foreground=Brush.Parse("#8190AC")});
-            var button=new Button{Content=stack,Width=191,Height=163,Padding=new Thickness(11),Margin=new Thickness(0,0,9,9),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Top,Background=Brush.Parse("#181923"),BorderBrush=Brush.Parse("#30303D"),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(10)};
+            stack.Children.Add(new TextBlock{Text=preset.CategoryLabel.ToUpperInvariant(),FontSize=9,LetterSpacing=1,[!TextBlock.ForegroundProperty]=new DynamicResourceExtension("WsMuted")});
+            var button=new Button{Content=stack,Width=191,Height=163,Padding=new Thickness(11),Margin=new Thickness(0,0,9,9),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Top,[!Button.BackgroundProperty]=new DynamicResourceExtension("WsPanel"),[!Button.BorderBrushProperty]=new DynamicResourceExtension("WsBorder"),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(6)};
             Avalonia.Automation.AutomationProperties.SetName(button,"Animação: "+preset.Name);
             button.Click+=(_,_)=>SelectPreset(preset);
             button.PointerEntered+=(_,_)=>
@@ -189,7 +190,8 @@ public sealed class AnimationEditorWindow : Window
         foreach(var item in _items)
         {
             var selected=item.Preset.Id==_style.AnimationPreset;
-            item.Button.BorderBrush=Brush.Parse(selected?"#9A6BFF":"#30303D");item.Button.Background=Brush.Parse(selected?"#251D38":"#181923");
+            item.Button.Bind(Button.BorderBrushProperty,new DynamicResourceExtension(selected?"WsAccent":"WsBorder"));
+            item.Button.Bind(Button.BackgroundProperty,new DynamicResourceExtension(selected?"WsSelection":"WsPanel"));
         }
         _title.Text=AnimationPresets.Find(_style.AnimationPreset).Name;
     }
