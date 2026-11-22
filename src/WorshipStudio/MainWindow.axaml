@@ -93,10 +93,16 @@
         <TextBlock Text="Posição vertical"/><Slider x:Name="TextYSlider" Minimum="0.1" Maximum="0.9" Value="0.5"/>
         <Border Height="1" Background="#293140" Margin="0,4"/>
         <TextBlock Text="ANIMAÇÕES DAS LETRAS" Classes="caption"/>
+        <Button x:Name="AnimationGalleryButton" Content="Abrir galeria · animações granulares" Classes="primary" HorizontalAlignment="Stretch" FontSize="11"/>
+        <TextBlock x:Name="PresetSummary" Text="Entrada clássica" TextWrapping="Wrap" FontSize="11" Foreground="#B3A3DE"/>
+        <CheckBox x:Name="PresetModeCheck" Content="Usar animação granular"/>
+        <StackPanel x:Name="LegacyEntrancePanel" Spacing="10">
         <TextBlock Text="Entrada da letra" FontSize="11"/>
         <ComboBox x:Name="TransitionCombo" AutomationProperties.Name="Animação de entrada"/>
-        <Button x:Name="ReplayButton" Content="Testar entrada na prévia" HorizontalAlignment="Stretch"/>
         <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Duração da transição"/><TextBlock x:Name="DurationValue" Grid.Column="1" Classes="muted"/></Grid><Slider x:Name="DurationSlider" Minimum="0" Maximum="3" Value="0.6"/>
+        </StackPanel>
+        <Button x:Name="ReplayButton" Content="Testar animação na prévia" HorizontalAlignment="Stretch"/>
+        <StackPanel x:Name="LegacyMotionPanel" Spacing="10">
         <TextBlock Text="Animação contínua" FontSize="11"/>
         <ComboBox x:Name="LetterAnimationCombo" AutomationProperties.Name="Animação contínua da letra"/>
         <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Velocidade da letra" FontSize="11"/><TextBlock x:Name="LetterSpeedValue" Grid.Column="1" Classes="muted"/></Grid>
@@ -104,6 +110,7 @@
         <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Intensidade da animação" FontSize="11"/><TextBlock x:Name="LetterIntensityValue" Grid.Column="1" Classes="muted"/></Grid>
         <Slider x:Name="LetterIntensitySlider" Minimum="0" Maximum="1" Value="0.5"/>
         <TextBlock Text="Combine uma entrada com um efeito contínuo. A velocidade da letra é independente do fundo. As animações também aparecem na projeção e no MP4." TextWrapping="Wrap" FontSize="10" Foreground="#7F90A8"/>
+        </StackPanel>
         <Grid ColumnDefinitions="*,*"><Button x:Name="SaveStyleButton" Content="Salvar cena" Margin="0,0,4,0"/><Button x:Name="LoadStyleButton" Grid.Column="1" Content="Carregar" Margin="4,0,0,0"/></Grid>
         <Border Height="1" Background="#293140" Margin="0,4"/>
         <TextBlock Text="REAÇÃO AO ÁUDIO" Classes="caption"/>

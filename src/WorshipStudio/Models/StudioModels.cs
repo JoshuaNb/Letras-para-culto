@@ -26,6 +26,17 @@ public sealed record StageStyle
     public string LyricAnimation { get; set; } = "None";
     public double LyricAnimationSpeed { get; set; } = 1;
     public double LyricAnimationIntensity { get; set; } = .5;
+    public bool UsePresetAnimation { get; set; }
+    public string AnimationPreset { get; set; } = "fade-suave";
+    public string AnimationGranularity { get; set; } = "Word";
+    public double AnimationDuration { get; set; } = .7;
+    public double AnimationStagger { get; set; } = .06;
+    public double AnimationDelay { get; set; }
+    public string AnimationOrder { get; set; } = "Forward";
+    public string AnimationEasing { get; set; } = "EaseOut";
+    public double AnimationStrength { get; set; } = 1;
+    public bool AnimationLoop { get; set; }
+    public double AnimationLoopPause { get; set; } = 1;
     public double MotionSpeed { get; set; } = 1;
     public double Dim { get; set; } = .35;
     public double TextY { get; set; } = .5;

@@ -199,6 +199,7 @@ if (!baselineOnly)
     });
 }
 
+if(!baselineOnly)GranularityChecks.RunAndThrow(Path.Combine(output,"granularity-1.2"));
 var summary = new { Passed = results.Count(r => r.Passed), Failed = results.Count(r => !r.Passed), Checks = results };
 File.WriteAllText(Path.Combine(output, "typography-render-tests.json"), JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine($"{summary.Passed} aprovados; {summary.Failed} falhas. Evidências: {output}");

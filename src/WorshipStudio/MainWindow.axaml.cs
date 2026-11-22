@@ -113,6 +113,7 @@ public partial class MainWindow : Window
         foreach (var name in new[] { "BackgroundCombo", "FontCombo", "LetterAnimationCombo" }) C<ComboBox>(name).SelectionChanged += (_,_)=>ChangeStyle();
         C<ComboBox>("TransitionCombo").SelectionChanged+=(_,_)=>{if(!_loading){ChangeStyle();_preview.ReplayTransition();}};
         C<CheckBox>("BoldCheck").IsCheckedChanged+=(_,_)=>ChangeStyle();
+        C<CheckBox>("PresetModeCheck").IsCheckedChanged+=(_,_)=>{if(!_loading){ChangeStyle();_preview.ReplayTransition();_revision++;}};
         foreach (var name in new[] { "DimSlider", "SpeedSlider", "DurationSlider", "TextYSlider", "LetterSpeedSlider", "LetterIntensitySlider" }) C<Slider>(name).PropertyChanged += (_,e)=>{if(e.Property==Slider.ValueProperty)ChangeStyle();};
         C<NumericUpDown>("FontSizeInput").ValueChanged += (_,_)=>ChangeStyle();
         foreach (var name in new[]{"AccentField","BackgroundColorField","TextColorField"}) C<ColorField>(name).ColorChanged+=()=>ChangeStyle();
@@ -153,6 +154,14 @@ public partial class MainWindow : Window
         Click("BlackButton",ToggleBlackout);Click("HideButton",ToggleLyrics);
         Click("BeatButton",()=>_audio.Tap());
         Click("ReplayButton",()=>_preview.ReplayTransition());
+        ClickAsync("AnimationGalleryButton",async()=>
+        {
+            var text=_slides.Count>0?_slides[Math.Clamp(_previewIndex,0,_slides.Count-1)].Text:"Tua presença\nEnche este lugar";
+            var result=await new AnimationEditorWindow(_document.Style,text).ShowDialog<StageStyle?>(this);
+            if(result==null)return;
+            _document.Style=result;LoadStyleControls();_revision++;RenderFrames();_preview.ReplayTransition();ScheduleSave();
+            Status("Animação aplicada: "+AnimationPresets.Find(result.AnimationPreset).Name);
+        });
         ClickAsync("MediaButton",PickMedia);
         Click("RestartVideoButton",()=>{_preview.RestartVideo();_projection?.Surface.RestartVideo();Status("Vídeo do fundo reiniciado");});
         ClickAsync("BackupButton",SaveBackup);ClickAsync("RestoreButton",RestoreBackup);
@@ -183,6 +192,7 @@ public partial class MainWindow : Window
         if(s.FontFamily!=font){_document.Style=s=s with{FontFamily=font};}
         C<NumericUpDown>("FontSizeInput").Value=(decimal)s.FontSize;
         C<CheckBox>("BoldCheck").IsChecked=s.Bold;
+        C<CheckBox>("PresetModeCheck").IsChecked=s.UsePresetAnimation;
         C<ColorField>("AccentField").Value=s.AccentColor;C<ColorField>("BackgroundColorField").Value=s.BackgroundColor;C<ColorField>("TextColorField").Value=s.TextColor;
         C<ComboBox>("LetterAnimationCombo").SelectedIndex=Math.Max(0,Array.IndexOf(_letterAnimations,s.LyricAnimation));
         C<Slider>("LetterSpeedSlider").Value=s.LyricAnimationSpeed;C<Slider>("LetterIntensitySlider").Value=s.LyricAnimationIntensity;
@@ -205,6 +215,7 @@ public partial class MainWindow : Window
             FontFamily=C<ComboBox>("FontCombo").SelectedItem as string??"Segoe UI",
             FontSize=(double)(C<NumericUpDown>("FontSizeInput").Value??64),
             Bold=C<CheckBox>("BoldCheck").IsChecked==true,
+            UsePresetAnimation=C<CheckBox>("PresetModeCheck").IsChecked==true,
             AccentColor=C<ColorField>("AccentField").Value,BackgroundColor=C<ColorField>("BackgroundColorField").Value,TextColor=C<ColorField>("TextColorField").Value,
             LyricAnimation=_letterAnimations[Math.Clamp(C<ComboBox>("LetterAnimationCombo").SelectedIndex,0,_letterAnimations.Length-1)],
             LyricAnimationSpeed=C<Slider>("LetterSpeedSlider").Value,LyricAnimationIntensity=C<Slider>("LetterIntensitySlider").Value,
@@ -227,6 +238,10 @@ public partial class MainWindow : Window
         C<TextBlock>("LetterIntensityValue").Text=$"{style.LyricAnimationIntensity:P0}";
         var animated=style.LyricAnimation!="None";
         C<Slider>("LetterSpeedSlider").IsEnabled=animated;C<Slider>("LetterIntensitySlider").IsEnabled=animated;
+        C<StackPanel>("LegacyEntrancePanel").IsEnabled=!style.UsePresetAnimation;
+        C<StackPanel>("LegacyMotionPanel").IsEnabled=!style.UsePresetAnimation;
+        var unit=style.AnimationGranularity switch{"Character"=>"por letra","Line"=>"por linha","Text"=>"bloco inteiro",_=>"por palavra"};
+        C<TextBlock>("PresetSummary").Text=style.UsePresetAnimation?$"{AnimationPresets.Find(style.AnimationPreset).Name} · {unit}\n{style.AnimationDuration:0.00}s por unidade · intervalo {style.AnimationStagger*1000:0}ms":"Entrada clássica · abra a galeria para animar por unidade";
     }
 
     private void RefreshLibrary(Guid? select=null)

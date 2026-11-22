@@ -1,4 +1,4 @@
-# Verificação — Worship Studio 1.1.0
+# Verificação — Worship Studio 1.2.0
 
 Data: 22/11/2026, fuso America/Sao_Paulo. Este relatório distingue testes observados de capacidades implementadas que ainda dependem de validação com os equipamentos da igreja.
 
@@ -12,11 +12,41 @@ Data: 22/11/2026, fuso America/Sao_Paulo. Este relatório distingue testes obser
 
 Inventário legível por máquina: `test-evidence/environment.json`. A publicação é self-contained win-x64 e inclui o runtime; o usuário final não precisa do SDK.
 
-## Tipografia e animações — atualização 1.1
+## Granularidade e galeria — atualização 1.2
+
+A compilação Release da versão 1.2.0 terminou sem erros nem avisos. Foram executados **44 testes de núcleo, 29 verificações visuais anteriores e 79 verificações visuais granulares: todos aprovados, sem falhas ou testes ignorados**. Os registros são `test-evidence/core-1.2/core-1.2.trx`, `test-evidence/render-complete-1.2/typography-render-tests.json` e `test-evidence/render-complete-1.2/granularity-1.2/granularity-render-tests.json`; os quadros PNG acompanham os resumos.
+
+```powershell
+dotnet test tests/WorshipStudio.Tests.csproj -c Release
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.2
+```
+
+| Recurso da atualização | Verificação observada |
+| --- | --- |
+| Galeria das referências | 66 opções com identificadores únicos: 65 animadas e Nenhuma; os 65 efeitos geram sequências distintas de pixels |
+| Granularidade | Texto inteiro, linhas visuais após quebra automática, palavras e grafemas Unicode animados separadamente |
+| Unicode | Acentos combinados, emoji de família e bandeira preservados como unidades completas |
+| Tempo e ordem | Duração por unidade, intervalo, atraso inicial, início/fim/centro/aleatória repetível e repetição com pausa validados |
+| Curvas | Seis curvas, extremos e ultrapassagem de Back conferidos; transformações finitas e estado final completo |
+| Desfoque real | Quadros intermediários apresentam bordas suavizadas pelo filtro Skia; o fim recupera exatamente o texto nítido de Nenhuma |
+| Máscaras e RGB Split | Recortes, separação dos canais e transformação por unidade alteram os quadros intermediários e terminam no texto completo |
+| Aparência e operação | Fonte, negrito e cor respeitados; letra oculta, tela preta e sobreposição transparente para vídeo preservadas |
+| MP4 | O tempo local da estrofe reinicia a entrada granular independentemente do tempo global do fundo |
+| Persistência | Parâmetros sobrevivem à biblioteca, cena JSON e backup; dados fora dos limites são normalizados e cenas antigas mantêm o modo clássico |
+
+Os testes desenham com os arquivos reais de produção em Avalonia Headless e Skia. O motor é compartilhado pela prévia, projeção e captura para MP4. A textura do texto completo é armazenada em cache durante a animação, e o estado final usa um único desenho do texto. Isso não equivale a uma medição de FPS ou de latência em dois projetores físicos.
+
+Na interface Windows da versão 1.2 foram observados: abertura da galeria com 66 cartões; busca por Typewriter Blur Forte; seleção com parâmetros padrão por letra; pausa da prévia mostrando letras completas e letras ainda desfocadas; mudança para Por linha com duas unidades; Aplicar à cena atualizando o painel e a biblioteca; reabertura com os parâmetros salvos; escolha de Nenhuma seguida de Cancelar preservando Typewriter Blur Forte; envio à projeção independente, avanço de estrofe reiniciando a entrada e tela preta cobrindo a animação. O aplicativo reportou aceleração de GPU ativa e foi fechado pelos controles da janela. Registro: `test-evidence/ui-verification-1.2.json`.
+
+As quatro referências recebidas são imagens estáticas de uma galeria. Os nomes e categorias foram implementados; os movimentos foram interpretados a partir dessas referências. As imagens não permitem comprovar reprodução idêntica dos movimentos de um vídeo.
+
+Foi executada também uma integração MP4 com o serviço de exportação e o renderizador de produção: **7 verificações adicionais aprovadas**. FFprobe confirmou 640×360, 12 quadros/s, três segundos e 36 quadros. FFmpeg decodificou todos os quadros; as duas estrofes reiniciaram sem letras, evoluíram durante a entrada e terminaram completas. A comparação dos quadros finais com as imagens de referência sem animação confirmou sobreposição de 95,9% e 96,6% e erro médio RGB de aproximadamente 0,14/255 após compressão. Vídeo, quadros, código do verificador e métricas: `test-evidence/mp4-granularity-1.2/`. **Total automatizado da versão 1.2: 159 verificações aprovadas, zero falhas.**
+
+## Tipografia e animações — histórico da atualização 1.1
 
 A versão 1.1 foi compilada em Release sem erros nem avisos. A correção de fonte usa uma chave de cache que distingue explicitamente família, peso, estilo e largura da fonte, em vez da representação genérica do objeto `Typeface`. A regressão visual troca a fonte na mesma estrofe e no mesmo renderizador, de forma que reutilizar indevidamente o texto da fonte anterior seja detectado.
 
-**Resultado atual: 30 testes de operação aprovados, 0 falhas, 0 ignorados, e 29 verificações visuais aprovadas, 0 falhas.** O registro dos testes é `test-evidence/verification-1.1.trx`; o resumo visual e os quadros PNG estão em `test-evidence/typography-1.1/`.
+**Resultado da versão 1.1: 30 testes de operação aprovados, 0 falhas, 0 ignorados, e 29 verificações visuais aprovadas, 0 falhas.** O registro dos testes é `test-evidence/verification-1.1.trx`; o resumo visual e os quadros PNG estão em `test-evidence/typography-1.1/`.
 
 ```powershell
 dotnet test tests/WorshipStudio.Tests.csproj -c Release --logger 'trx;LogFileName=verification-1.1.trx'
@@ -61,7 +91,7 @@ Comando executado sobre o projeto entregue:
 dotnet test tests\WorshipStudio.Tests.csproj -c Release --logger 'trx;LogFileName=verification.trx'
 ```
 
-Na versão 1.0, o resultado foi **27 aprovados, 0 falhas, 0 ignorados**, com registro em `test-evidence/verification.trx`. A suíte atual passou novamente com **30 aprovados**, incluindo as três novas regressões de persistência de tipografia; o registro atual é `test-evidence/verification-1.1.trx`.
+Na versão 1.0, o resultado foi **27 aprovados, 0 falhas, 0 ignorados**, com registro em `test-evidence/verification.trx`. Na versão 1.1, a suíte passou com **30 aprovados**, incluindo três regressões de persistência de tipografia; o registro é `test-evidence/verification-1.1.trx`. A versão 1.2 passou os 44 testes descritos no início deste relatório.
 
 | Área | Verificação efetiva | Resultado |
 | --- | --- | --- |
@@ -113,16 +143,31 @@ Evidência: `test-evidence/audio-smoke.json`. O código de captura, cálculo RMS
 ## Escopo e limites da versão
 
 - O painel prepara letras sem substituir automaticamente o slide ao vivo. Projeção e painel têm janelas independentes; a saída pode ser posicionada na tela escolhida.
-- O editor ajusta fonte, negrito, cores, posição, 12 entradas animadas e oito efeitos contínuos, além das opções sem animação. Os parâmetros podem ser salvos em cenas. Não há linha do tempo de keyframes ou importação de modelos 3D; os efeitos de fundo são procedurais com geometria em perspectiva.
+- O editor ajusta fonte, negrito, cores e posição. A galeria oferece 66 opções, granularidade, tempos, ordem, curva, intensidade, repetição e prévia com barra de tempo. O modo clássico mantém 12 entradas animadas e oito efeitos contínuos. Os parâmetros podem ser salvos em cenas. Não há edição de keyframes arbitrários ou importação de modelos 3D; os efeitos de fundo são procedurais com geometria em perspectiva.
 - A sincronização usa amplitude/RMS, sem estimativa automática de BPM ou alinhamento de sílabas.
 - A exportação gera as estrofes do louvor selecionado com duração fixa por estrofe e áudio local opcional. Não grava a sessão de operação ao vivo.
 - GPU: Avalonia/Skia/ANGLE e decodificação LibVLC por hardware quando disponível, com fallback. Não foi medido um perfil de FPS contínuo/latência sob carga de culto com duas telas.
 - O controle remoto foi validado por requisições HTTP autenticadas em loopback, incluindo a entrega da interface HTML. A inicialização pelo painel também foi observada. Não houve teste em navegador ou celular físico. A solicitação de firewall do Windows não foi aceita nem alterada pela automação; o processo de teste foi encerrado. O acesso de outros dispositivos depende da permissão de rede concedida pelo operador e do isolamento Wi-Fi.
-- O vídeo de referência citado não estava disponível entre os arquivos recebidos. Não foi possível analisá-lo ou validar fidelidade visual.
+- O vídeo citado no pedido inicial não foi recebido. Na atualização 1.2 foram recebidas quatro imagens estáticas da galeria; elas orientam os nomes e categorias, sem permitir comparar movimentos quadro a quadro.
 
 ## Empacotamento
 
 As ferramentas nativas são distribuídas sem modificações, com licenças, configuração e referências de origem. O arquivo original FFmpeg LGPL foi conferido por SHA256 com o digest da release GitHub. Inno Setup foi obtido do site oficial e teve assinatura Authenticode válida, publicada por Pyrsys B.V.
+
+### Validação da versão 1.2
+
+O pacote de teste 1.2.0 foi compilado com o mesmo script e os mesmos binários publicados da distribuição, usando uma identidade de instalação e pasta isoladas para preservar a instalação existente. O pacote de distribuição mantém a identidade padrão para atualização.
+
+| Verificação do pacote 1.2 | Resultado |
+| --- | --- |
+| Instalação e desinstalação silenciosas por usuário | Código 0 em ambas |
+| Integridade instalada | Hashes de WorshipStudio.dll, CoreCLR, LibVLC e FFmpeg iguais aos da publicação |
+| Runtime independente | Aplicativo iniciou com DOTNET_ROOT inválido e descoberta externa desativada; CoreCLR carregado da própria instalação |
+| Inicialização | Janela Worship Studio — Operação e processo respondendo |
+| Limpeza do teste | Aplicativo e registro QA removidos; processo de teste encerrado |
+| Instalação existente | Registro da versão 1.1.0 em D:\Worship Studio permaneceu inalterado |
+
+Evidências: `test-evidence/installer-verification-1.2.json`, `test-evidence/setup-install-1.2.log` e `test-evidence/setup-uninstall-1.2.log`. O processo instalado usado nesse teste foi encerrado por gerenciamento do processo. A verificação manual do editor usou outro diretório e terminou pelos controles da janela. A versão instalada do usuário não foi atualizada automaticamente; o novo instalador é entregue para atualização.
 
 ### Validação da versão 1.1
 

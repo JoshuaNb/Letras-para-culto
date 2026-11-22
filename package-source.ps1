@@ -1,7 +1,7 @@
 param([string]$Destination = '')
 $ErrorActionPreference = 'Stop'
 $taskRoot = [IO.Path]::GetFullPath($PSScriptRoot)
-if (-not $Destination) { $Destination = Join-Path (Split-Path $taskRoot -Parent) 'WorshipStudio-Codigo-Fonte-1.1.0.zip' }
+if (-not $Destination) { $Destination = Join-Path (Split-Path $taskRoot -Parent) 'WorshipStudio-Codigo-Fonte-1.2.0.zip' }
 $taskTarget = [IO.Path]::GetFullPath($Destination)
 if ($taskTarget.StartsWith($taskRoot + [IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) {
     throw 'Salve o arquivo ZIP fora da pasta de origem para evitar inclusão recursiva.'

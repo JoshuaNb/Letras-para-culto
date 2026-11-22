@@ -1,10 +1,10 @@
-# Worship Studio 1.1.0
+# Worship Studio 1.2.0
 
 Aplicativo desktop em C#/.NET 10 e Avalonia UI para preparar e projetar letras de louvores. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
 
 ## Instalação e primeira projeção
 
-1. Execute `WorshipStudio-Setup-1.1.0.exe` no Windows 11 x64. A instalação é por usuário, sem exigir administrador. .NET, LibVLC e FFmpeg necessários já acompanham o pacote. A atualização preserva a biblioteca existente.
+1. Execute `WorshipStudio-Setup-1.2.0.exe` no Windows 11 x64. A instalação é por usuário, sem exigir administrador. .NET, LibVLC e FFmpeg necessários já acompanham o pacote. A atualização preserva a biblioteca existente.
 2. Para dois monitores, escolha **Estender estes vídeos** nas configurações de vídeo do Windows. Ligue o projetor antes de iniciar.
 3. Abra Worship Studio. Na aba **Cena**, escolha o monitor de saída.
 4. Clique **Abrir projeção**. A janela de operação permanece independente da projeção. A janela de saída pode funcionar no mesmo monitor quando não há segunda tela.
@@ -35,7 +35,7 @@ O campo de busca procura título, autoria e letra. **Adicionar ao roteiro** mont
 
 A aba **Cena** contém os controles reais do renderizador: fundo procedural, imagem/vídeo local, velocidade, escurecimento, cores, fonte, negrito, tamanho, posição e animações das letras. As alterações atualizam a prévia e a projeção em tempo real. **Reiniciar vídeo do fundo** reinicia a mídia nas superfícies de prévia e projeção. **Salvar cena** e **Carregar** permitem reutilizar os parâmetros.
 
-Os efeitos procedurais usam geometria em perspectiva e animação contínua. O editor desta versão ajusta parâmetros e transições; não possui linha do tempo de keyframes nem importação de modelos 3D. Imagens e vídeos escolhidos são copiados para a pasta de mídia da biblioteca. A reprodução de fundo usa LibVLC local, em loop e sem som, para preservar o áudio do culto.
+Os efeitos procedurais usam geometria em perspectiva e animação contínua. O editor permite ajustar as entradas das letras por unidade e percorrer sua prévia no tempo. Não possui edição livre de keyframes nem importação de modelos 3D. Imagens e vídeos escolhidos são copiados para a pasta de mídia da biblioteca. A reprodução de fundo usa LibVLC local, em loop e sem som, para preservar o áudio do culto.
 
 O Avalonia usa Skia/ANGLE no Windows com aceleração gráfica e fallback de software. O LibVLC solicita decodificação por hardware quando disponível. O uso efetivo da GPU depende do driver e do formato da mídia. A versão não inclui um benchmark certificado no Ryzen 5 5600G/RX 6600.
 
@@ -48,6 +48,48 @@ Marque **Negrito** para usar o peso 700; desmarque para usar o peso normal 400. 
 Clique na amostra de **Cor da letra** para abrir o seletor visual. Arraste no quadro de saturação e luminosidade, ajuste o matiz, use os controles Vermelho/Verde/Azul ou escolha uma cor da paleta. Também é possível digitar um código HEX, como `#FFD166`. As mudanças aparecem ao vivo enquanto o seletor está aberto. **Aplicar cor** mantém a escolha; **Cancelar**, Esc ou fechar a janela restaura a cor anterior. Códigos HEX inválidos não são aplicados. **Cor do efeito** e **Cor do fundo** usam o mesmo seletor.
 
 ## Animações das letras
+
+Em **Cena → Animações das letras**, clique **Abrir galeria · animações granulares**. A galeria contém **66 opções, incluindo Nenhuma**, com os nomes e as categorias das quatro imagens de referência. Use a busca pelo nome ou o filtro de categoria para encontrar a predefinição. Passe o mouse sobre um cartão para ver sua animação; clique para editar o efeito com o texto da estrofe na prévia maior.
+
+As predefinições incluem Fade Suave, Pluma Caindo, Fluxo de Seda, Cascata, Blur Reveal, os três Typewriter Blur, Focus Pull, Luz Divina, Gold Reveal, Névoa, Ressurreição, RGB Split, Jelly Pop e Spring Bounce. Cada opção carrega um perfil de movimento e parâmetros iniciais próprios. Fonte, negrito, cores e fundo da cena permanecem escolhidos pelo operador.
+
+### Granularidade e sequência
+
+**Granularidade** define o que recebe uma animação independente:
+
+| Opção | Unidade animada |
+| --- | --- |
+| Por letra | Cada grafema Unicode: acentos combinados e sequências de emoji permanecem unidos |
+| Por palavra | Cada palavra da estrofe |
+| Por linha | Cada linha do texto na projeção |
+| Bloco inteiro | A estrofe completa como uma única unidade |
+
+O desenho completo do texto define a posição final de cada unidade. Revelar uma letra ou palavra não recentraliza o restante da frase. A quantidade de unidades e o tempo de entrada completa aparecem junto aos controles.
+
+| Controle | Efeito |
+| --- | --- |
+| Duração por unidade | Tempo para cada letra, palavra, linha ou bloco completar o movimento; de 0 a 5 segundos |
+| Intervalo entre unidades | Espaço de tempo entre o início de uma unidade e o da seguinte; de 0 a 0,5 segundo |
+| Atraso inicial | Espera antes de iniciar a entrada; de 0 a 3 segundos |
+| Ordem de aparição | Do início ao fim, do fim ao início, do centro para fora ou aleatória repetível |
+| Curva do movimento | Linear, desacelerar, suavizar início e fim, ultrapassar e voltar, elástica ou quique |
+| Intensidade do efeito | Ajusta a força do movimento, escala, desfoque, brilho e deslocamentos do perfil; de 0 a 200% |
+| Repetir na projeção | Repete o ciclo na saída ao vivo e na exportação MP4 |
+| Pausa na repetição | Mantém o texto completo por um período antes de repetir a entrada; de 0 a 8 segundos |
+
+As unidades podem se sobrepor no tempo. Por exemplo, com oito palavras, duração de 0,70 segundo, intervalo de 0,06 segundo e atraso inicial de 0,20 segundo, a entrada completa termina em **1,32 segundo**: `0,20 + 0,70 + 7 × 0,06`. O intervalo é entre os inícios; não é uma espera adicional depois que cada palavra termina. A ordem aleatória é determinística, para que a sequência seja reproduzida da mesma forma na prévia, na projeção e no MP4.
+
+### Prévia e aplicação à cena
+
+A prévia maior usa um fundo neutro para destacar as letras. **Pausar/Reproduzir** controla sua reprodução e **Recomeçar** retorna ao início. Arraste a barra de tempo para inspecionar um instante específico; essa ação pausa a prévia. **Texto para testar** altera somente o texto de teste do editor, sem editar o louvor salvo.
+
+A prévia repete o efeito para facilitar os ajustes. Essa repetição de teste é independente da opção **Repetir na projeção**. Selecionar cartões, alterar parâmetros ou percorrer a barra de tempo não muda a cena projetada. **Aplicar à cena** confirma a predefinição e seus ajustes; **Cancelar** ou fechar o editor descarta as alterações. A opção **Nenhuma** exibe o texto completo sem entrada animada.
+
+Ao aplicar uma predefinição, **Usar animação granular** fica marcado. Desmarque essa opção para voltar aos controles clássicos descritos abaixo. Bibliotecas e cenas anteriores continuam no modo clássico até que o operador aplique ou ative uma animação granular. Os novos ajustes são preservados na biblioteca, nas cenas JSON e no backup `.wstudio`.
+
+As referências recebidas são **imagens estáticas de uma galeria**. Os nomes, as categorias e a organização orientaram as predefinições; os movimentos foram interpretados a partir dessas informações. Não foi recebido um vídeo desses efeitos, portanto esta versão não afirma reproduzir uma animação de referência quadro a quadro.
+
+### Controles clássicos de entrada e movimento
 
 Combine uma **Entrada da letra**, executada quando o texto muda, com uma **Animação contínua**, mantida enquanto a estrofe permanece visível. A animação das letras tem velocidade própria, independente do movimento do fundo, e também aparece no vídeo exportado.
 
@@ -94,7 +136,7 @@ O token não é salvo no arquivo de biblioteca. A integração é de leitura; o 
 
 ## MP4
 
-**Exportar MP4** gera um vídeo a partir das estrofes e dos parâmetros de cena. A renderização usa quadros reais do mesmo motor de letras e efeitos; fundos em vídeo são compostos pelo FFmpeg. A exportação é offline. A duração por slide é fixa conforme a configuração da exportação; não é uma gravação da sessão ao vivo.
+**Exportar MP4** gera um vídeo a partir das estrofes e dos parâmetros de cena, incluindo as animações granulares, sua ordem e sua repetição quando ativada. A renderização usa quadros reais do mesmo motor de letras e efeitos; fundos em vídeo são compostos pelo FFmpeg. A exportação é offline. A duração por slide é fixa conforme a configuração da exportação; não é uma gravação da sessão ao vivo. Confira no editor o tempo de entrada completa e escolha um tempo por estrofe que permita mostrar o resultado desejado.
 
 O codificador padrão é MPEG-4 Part 2 em contêiner MP4, com pixel format YUV420P. Uma opção de aceleração AMD AMF pode ser usada quando disponível; o programa testa o codificador antes de escolhê-lo. A trilha de áudio, quando selecionada, é codificada em AAC. Não há dependência de codecs pagos. O cancelamento preserva um arquivo de destino preexistente e remove a saída parcial.
 
@@ -134,10 +176,10 @@ A primeira restauração de pacotes de desenvolvimento usa NuGet. Isso não é n
 Para executar apenas as verificações visuais de tipografia:
 
 ```powershell
-dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.1
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.2
 ```
 
-Consulte `VERIFICACAO.md` para resultados observados e limites da validação. Nenhum vídeo de referência chegou acessível nesta conversa; a aparência foi desenvolvida a partir dos requisitos escritos.
+Consulte `VERIFICACAO.md` para resultados observados e limites da validação. A galeria desta atualização usa as quatro capturas estáticas fornecidas; os movimentos são interpretações dos nomes e categorias, sem comparação com um vídeo de referência.
 
 ## Licenças
 

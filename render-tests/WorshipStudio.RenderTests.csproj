@@ -14,5 +14,8 @@
     <Compile Include="../src/WorshipStudio/Models/StudioModels.cs" Link="StudioModels.cs" />
     <Compile Include="$(RendererSource)" Link="StageRenderer.cs" />
     <Compile Include="../src/WorshipStudio/Controls/ColorField.cs" Link="ColorField.cs" />
+    <Compile Include="../src/WorshipStudio/Controls/GranularLetterRenderer.cs" Link="GranularLetterRenderer.cs" />
+    <Compile Include="../src/WorshipStudio/Models/AnimationPresets.cs" Link="AnimationPresets.cs" />
+    <Compile Include="../src/WorshipStudio/Models/AnimationTimeline.cs" Link="AnimationTimeline.cs" />
   </ItemGroup>
 </Project>

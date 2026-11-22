@@ -1,146 +1,76 @@
-Projeto GitHub: Letras para culto. O executável desta versão conserva o nome Worship Studio. Para compilar com ferramentas nativas e evidências, utilize o ZIP completo anexado à Release v1.1.0.
+# Letras para culto
 
-# Worship Studio 1.1.0
+Aplicativo desktop gratuito e offline para preparar e projetar letras de louvores em igrejas, desenvolvido em **C#/.NET 10 e Avalonia UI** para **Windows 11 x64**.
 
-Aplicativo desktop em C#/.NET 10 e Avalonia UI para preparar e projetar letras de louvores. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
+Este é o nome do projeto no GitHub. Nas três primeiras versões, o aplicativo, o executável e os instaladores conservam o nome **Worship Studio**.
 
-## Instalação e primeira projeção
+## Versões disponíveis
 
-1. Execute `WorshipStudio-Setup-1.1.0.exe` no Windows 11 x64. A instalação é por usuário, sem exigir administrador. .NET, LibVLC e FFmpeg necessários já acompanham o pacote. A atualização preserva a biblioteca existente.
-2. Para dois monitores, escolha **Estender estes vídeos** nas configurações de vídeo do Windows. Ligue o projetor antes de iniciar.
-3. Abra Worship Studio. Na aba **Cena**, escolha o monitor de saída.
-4. Clique **Abrir projeção**. A janela de operação permanece independente da projeção. A janela de saída pode funcionar no mesmo monitor quando não há segunda tela.
-5. Selecione um louvor na biblioteca. Um clique prepara a prévia; duplo clique envia ao vivo. Selecione uma estrofe e use **Projetar estrofe**. Esse comando também abre a saída automaticamente quando estiver fechada.
-6. Use **Próxima**, **Anterior**, **Ocultar letra** e **Tela preta** durante o culto.
+| Versão | O que oferece | Novidades em relação à anterior |
+| --- | --- | --- |
+| [1.0.0](docs/releases/v1.0.0.md) | Biblioteca, roteiro, editor de letras, painel e projeção independentes, mídia local, efeitos, áudio, controle remoto, Holyrics e MP4 | Primeira versão funcional; quatro entradas animadas e corte direto |
+| [1.1.0](docs/releases/v1.1.0.md) | Todos os recursos da 1.0, com mais controles de aparência e movimento | Correção da troca de fonte, fontes instaladas, negrito, seletor visual de cores, 12 entradas animadas e oito movimentos contínuos |
+| [1.2.0](docs/releases/v1.2.0.md) | Todos os recursos anteriores e editor de animações granulares | Galeria com 66 opções, animação por letra/palavra/linha/bloco, tempos, ordem, curvas, intensidade, repetição e prévia com barra de tempo |
 
-O louvor inicial é um texto original curto para conferir a operação. Importe ou cadastre a biblioteca da igreja.
+Para uma instalação nova, prefira **1.2.0**. Os instaladores e os ZIPs completos de código-fonte ficam anexados às respectivas **Releases**. Consulte o [histórico de mudanças](CHANGELOG.md).
 
-## Biblioteca e roteiro
+[Baixar a versão 1.2.0](https://github.com/JoshuaNb/Letras-para-culto/releases/tag/v1.2.0) · [Todos os lançamentos](https://github.com/JoshuaNb/Letras-para-culto/releases)
 
-**+ Novo** e **Editar** abrem o editor de letras. Informe título, autoria e letra. Separe slides com uma linha em branco; títulos entre colchetes, como `[Verso 1]` e `[Refrão]`, identificam as partes.
+## Recursos de operação
 
-```text
-[Verso 1]
-Primeira linha
-Segunda linha
+- Interface em português brasileiro; operação sem conta, assinatura ou internet.
+- Biblioteca local, busca, roteiro do culto, edição e importação de TXT, JSON e OpenLyrics.
+- Prévia e saída ao vivo independentes; seleção do monitor, navegação, ocultar letra e tela preta.
+- Fundos com imagens e vídeos locais, Aurora, túnel e partículas com geometria em perspectiva.
+- Fonte, cores, posição e animações aplicadas à prévia, projeção e exportação.
+- Reação à amplitude do áudio por WASAPI e pulso manual.
+- Controle pelo navegador do celular na mesma rede, com chave de acesso.
+- Importação e acompanhamento da apresentação pela API local oficial do Holyrics.
+- Exportação MP4 offline com áudio opcional; biblioteca, cenas e backup `.wstudio`.
 
-[Refrão]
-Terceira linha
-Quarta linha
-```
+## Instalar e projetar
 
-O campo de busca procura título, autoria e letra. **Adicionar ao roteiro** monta a ordem do culto; escolha **Roteiro do culto** para reordenar ou remover entradas. A seleção na biblioteca prepara a prévia e não muda por si só o slide ao vivo.
+1. Na Release desejada, baixe e execute `WorshipStudio-Setup-<versão>.exe`. O pacote inclui .NET, LibVLC e FFmpeg; não exige instalação prévia do SDK.
+2. Abra Worship Studio. Para dois monitores, configure a extensão de telas no Windows e selecione a saída em **Cena**.
+3. Cadastre ou importe um louvor. Um clique prepara a prévia; **Projetar estrofe** envia ao vivo.
+4. Na versão 1.2, abra **Cena → Animações das letras → Abrir galeria** para ajustar a granularidade e clique **Aplicar à cena**.
 
-**Importar** aceita letras TXT UTF-8, músicas JSON e OpenLyrics XML. JSON aceita uma música, lista, `songs` ou resposta Holyrics `data`, com `title`, `artist` e `lyrics` ou `slides`. OpenLyrics respeita `verseOrder`. `.hcb` e `.hcc` são formatos proprietários e não são lidos.
+A instalação é por usuário. A atualização preserva a biblioteca; faça backup antes de restaurar ou excluir dados. Os instaladores mantêm o nome original para permitir a atualização das versões já instaladas.
 
-## Cenas, animações e mídia
+## Compilar e testar
 
-A aba **Cena** contém os controles reais do renderizador: fundo procedural, imagem/vídeo local, velocidade, escurecimento, cores, fonte, negrito, tamanho, posição e animações das letras. As alterações atualizam a prévia e a projeção em tempo real. **Reiniciar vídeo do fundo** reinicia a mídia nas superfícies de prévia e projeção. **Salvar cena** e **Carregar** permitem reutilizar os parâmetros.
+O desenvolvimento requer SDK .NET 10 x64. Reconstruir o instalador requer também Inno Setup 6. A primeira restauração das dependências usa NuGet; a operação do programa pronto continua offline.
 
-Os efeitos procedurais usam geometria em perspectiva e animação contínua. O editor desta versão ajusta parâmetros e transições; não possui linha do tempo de keyframes nem importação de modelos 3D. Imagens e vídeos escolhidos são copiados para a pasta de mídia da biblioteca. A reprodução de fundo usa LibVLC local, em loop e sem som, para preservar o áudio do culto.
-
-O Avalonia usa Skia/ANGLE no Windows com aceleração gráfica e fallback de software. O LibVLC solicita decodificação por hardware quando disponível. O uso efetivo da GPU depende do driver e do formato da mídia. A versão não inclui um benchmark certificado no Ryzen 5 5600G/RX 6600.
-
-## Cores, fontes e negrito
-
-Em **Cena → Tipografia da letra**, escolha uma fonte na lista de fontes instaladas no computador. Cada nome é mostrado na própria fonte; a amostra **Adoração · Aa Bb Cc** permite conferir a seleção. A versão 1.1 corrige o cache que impedia a troca da fonte de aparecer quando a estrofe permanecia a mesma. A escolha também vale para a janela de projeção e para o MP4.
-
-Marque **Negrito** para usar o peso 700; desmarque para usar o peso normal 400. O tamanho da fonte continua expresso em pixels de referência para saída 1080p.
-
-Clique na amostra de **Cor da letra** para abrir o seletor visual. Arraste no quadro de saturação e luminosidade, ajuste o matiz, use os controles Vermelho/Verde/Azul ou escolha uma cor da paleta. Também é possível digitar um código HEX, como `#FFD166`. As mudanças aparecem ao vivo enquanto o seletor está aberto. **Aplicar cor** mantém a escolha; **Cancelar**, Esc ou fechar a janela restaura a cor anterior. Códigos HEX inválidos não são aplicados. **Cor do efeito** e **Cor do fundo** usam o mesmo seletor.
-
-## Animações das letras
-
-Combine uma **Entrada da letra**, executada quando o texto muda, com uma **Animação contínua**, mantida enquanto a estrofe permanece visível. A animação das letras tem velocidade própria, independente do movimento do fundo, e também aparece no vídeo exportado.
-
-| Entrada da letra | Comportamento |
-| --- | --- |
-| Dissolver | A letra aparece gradualmente |
-| Subir / Descer | Entrada com deslocamento vertical |
-| Entrar pela esquerda / direita | Entrada com deslocamento horizontal |
-| Aproximar | Entrada por escala |
-| Salto com aproximação | Escala com ressalto |
-| Girar e aparecer | Rotação curta com aparecimento |
-| Revelar da esquerda | Revelação progressiva pela área de recorte |
-| Máquina de escrever | Revelação de caracteres com suporte a acentos e Unicode |
-| Palavra por palavra | Revelação de palavras |
-| Linha por linha | Revelação de linhas |
-| Corte direto | Exibição imediata, sem animação de entrada |
-
-São 12 entradas animadas e a opção Corte direto. Ajuste a **Duração da transição** entre 0 e 3 segundos; zero exibe a letra completa imediatamente. Escolher outra entrada já a reproduz na prévia. **Testar entrada na prévia** permite repetir o teste sem mudar a saída ao vivo.
-
-Os oito efeitos contínuos são **Flutuar**, **Onda nas linhas**, **Pulsar**, **Respiração**, **Balançar**, **Saltar**, **Brilho pulsante** e **Vibração suave**. Escolha **Sem animação contínua** para deixar o texto parado. **Velocidade da letra** varia de 0,2× a 3×; **Intensidade da animação** varia de 0 a 100%. A intensidade zero mantém a letra estável.
-
-Fonte, negrito, cores e parâmetros de animação são preservados na biblioteca, nas cenas JSON e no backup `.wstudio`. Cenas antigas recebem negrito ligado e nenhuma animação contínua, preservando a leitura sem movimento adicional.
-
-## Reação ao áudio
-
-Ative **Sincronizar efeitos** e escolha **Som do computador (loopback)** ou **Entrada padrão / microfone**. O medidor mostra o nível capturado; ajuste **Sensibilidade**. O nível RMS altera a intensidade dos efeitos em tempo real. **Pulso manual** permite disparar uma reação sem captura.
-
-É uma reação à amplitude do áudio; esta versão não estima BPM, não detecta compassos e não faz alinhamento automático de letra com fonemas. Para entrada da mesa de som, configure o dispositivo de gravação padrão do Windows antes de ativar a captura.
-
-## Controle pelo celular
-
-Na aba **Conexões**, clique **Iniciar controle remoto**, copie o endereço mostrado e abra no navegador do celular conectado à mesma rede local. Não é necessário instalar aplicativo no celular nem ter internet. A página contém navegação de slides, ocultar letra, tela preta e pulso manual.
-
-O endereço contém uma chave aleatória. Quem tiver o endereço na rede pode operar a projeção. Ao desligar e religar o controle, a chave anterior é revogada. Se o Windows pedir autorização de rede, permita para **redes privadas**. Redes Wi-Fi com isolamento entre clientes impedem o acesso entre celular e computador; conecte ambos a uma rede que permita a comunicação local. O servidor é desligado ao fechar o programa.
-
-## Holyrics
-
-A integração usa somente a API oficial local do Holyrics e não precisa de internet. No Holyrics, habilite o **API Server**, crie um token com permissões de leitura para `GetSongs`, `GetLyrics` e `GetCurrentPresentation`, e informe endereço e token em **Conexões**.
-
-- **Importar biblioteca via API** copia título, autoria e slides para a biblioteca local.
-- **Seguir apresentação** consulta a apresentação atual e envia sua letra à janela Worship Studio. Também acompanha as indicações de tela preta e letra oculta retornadas pela API.
-
-O token não é salvo no arquivo de biblioteca. A integração é de leitura; o Worship Studio não envia comandos ao Holyrics. Referência: [API Server oficial do Holyrics](https://github.com/holyrics/API-Server). A validação automatizada usa servidor local de teste compatível com os contratos documentados; valide com a versão do Holyrics usada pela sua igreja antes do culto.
-
-## MP4
-
-**Exportar MP4** gera um vídeo a partir das estrofes e dos parâmetros de cena. A renderização usa quadros reais do mesmo motor de letras e efeitos; fundos em vídeo são compostos pelo FFmpeg. A exportação é offline. A duração por slide é fixa conforme a configuração da exportação; não é uma gravação da sessão ao vivo.
-
-O codificador padrão é MPEG-4 Part 2 em contêiner MP4, com pixel format YUV420P. Uma opção de aceleração AMD AMF pode ser usada quando disponível; o programa testa o codificador antes de escolhê-lo. A trilha de áudio, quando selecionada, é codificada em AAC. Não há dependência de codecs pagos. O cancelamento preserva um arquivo de destino preexistente e remove a saída parcial.
-
-## Dados e cópias de segurança
-
-Os dados ficam em `%LOCALAPPDATA%\WorshipStudio`: `library.json`, revisões `.bak`, pasta `media` e `studio.log`. O pacote e o instalador não precisam de rede para abrir ou usar essa biblioteca.
-
-**Backup** cria um arquivo `.wstudio` com biblioteca, roteiro, cena e a mídia atualmente referenciada pela cena. **Restaurar** substitui a biblioteca depois da validação do arquivo e conserva a revisão anterior. O backup desta versão inclui a mídia da cena ativa, não arquivos avulsos que não estejam referenciados. Faça cópia antes de excluir louvores ou restaurar uma biblioteca. A desinstalação preserva os dados locais.
-
-## Atalhos
-
-| Tecla | Ação |
-| --- | --- |
-| Seta direita / Espaço | Próximo slide ao vivo |
-| Seta esquerda | Slide anterior |
-| B | Alternar tela preta |
-| L | Ocultar / exibir letra |
-| F11 | Alternar tela cheia da projeção |
-| Esc na projeção | Sair da tela cheia |
-
-Os atalhos de operação não devem interromper a digitação nos campos de edição.
-
-## Compilar e verificar
-
-Requer SDK .NET 10 x64 para desenvolvimento e Inno Setup 6 para reconstruir o instalador. O executável distribuído é self-contained e dispensa SDK/runtime instalado.
+Execute na raiz do código-fonte da versão:
 
 ```powershell
-.\build.ps1
-# Ou com ferramentas em caminhos personalizados:
-.\build.ps1 -DotnetPath 'C:\sdk\dotnet.exe' -InnoCompiler 'C:\Inno Setup 6\ISCC.exe'
-# Sem reconstruir instalador:
+# Ao usar git clone ou o ZIP automático do GitHub, restaure as ferramentas:
+.\Restaurar-Distribuicao.ps1
+dotnet test tests/WorshipStudio.Tests.csproj -c Release
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.2
 .\build.ps1 -SkipInstaller
+# Com Inno Setup disponível, para gerar o instalador:
+.\build.ps1
 ```
 
-A primeira restauração de pacotes de desenvolvimento usa NuGet. Isso não é necessário na operação do aplicativo pronto. `build.ps1` executa os testes de operação e as regressões visuais, publica em `app\win-x64` e compila o instalador. Os testes incluem biblioteca, importação, contrato Holyrics, autenticação remota, geração/decodificação de MP4 real e comparação dos pixels de fontes, pesos, cores e animações.
+A suíte `render-tests` existe a partir da versão 1.1. O script publica o executável independente do .NET em `app/win-x64`. O pacote completo de código-fonte inclui dependências nativas, licenças e arquivos de origem de terceiros.
 
-Para executar apenas as verificações visuais de tipografia:
+O Git guarda os fontes e as licenças; os executáveis nativos, os arquivos TAR de terceiros e os registros de teste acompanham o ZIP completo anexado à Release. Na versão 1.2, `Restaurar-Distribuicao.ps1` baixa esse ZIP, verifica seu SHA256 e restaura apenas `tools` e `third-party-sources`. Também aceita um ZIP já baixado com `-UsarArquivoLocal -Arquivo <caminho>`. Para compilar as tags 1.0 e 1.1, use o ZIP completo da respectiva Release. A restauração usa internet somente no ambiente de desenvolvimento.
 
-```powershell
-dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.1
-```
+## Validação e limites
 
-Consulte `VERIFICACAO.md` para resultados observados e limites da validação. Nenhum vídeo de referência chegou acessível nesta conversa; a aparência foi desenvolvida a partir dos requisitos escritos.
+| Versão | Resultado registrado |
+| --- | --- |
+| 1.0.0 | 27 testes de operação aprovados |
+| 1.1.0 | 30 testes de operação e 29 verificações visuais aprovados |
+| 1.2.0 | 44 testes de núcleo, 108 verificações visuais e sete de integração MP4: 159 aprovações |
 
-## Licenças
+Os testes não registraram falhas. Instalação, abertura e desinstalação também foram verificadas. Os relatórios `VERIFICACAO.md` e as evidências nos pacotes de cada versão detalham os resultados.
 
-Worship Studio: MIT. As dependências têm licenças próprias; consulte `THIRD-PARTY-NOTICES.txt`, a pasta `licenses` e `third-party-sources`. Fontes do aplicativo e arquivos de construção acompanham a entrega.
+A saída em duas janelas foi observada em um único monitor físico. Permanecem pendentes os testes com dois monitores físicos, celular físico, instalação real do Holyrics e sinal de áudio não nulo no equipamento da igreja. A aceleração depende do driver; não há benchmark de FPS ou latência em culto. A reação de áudio usa amplitude/RMS, sem detecção de BPM ou sincronização de sílabas. A exportação usa tempo fixo por estrofe e não grava a sessão ao vivo. Os fundos 3D são procedurais; não há importação de modelos nem edição livre de keyframes.
+
+A galeria 1.2 interpreta quatro imagens estáticas de referência; não representa uma reprodução comprovadamente idêntica dos movimentos de um vídeo.
+
+## Licença
+
+O aplicativo usa licença MIT. LibVLC, FFmpeg e demais dependências conservam suas próprias licenças; consulte `LICENSE.txt`, `THIRD-PARTY-NOTICES.txt`, `licenses` e `third-party-sources` no código-fonte completo.

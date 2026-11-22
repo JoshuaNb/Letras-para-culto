@@ -27,6 +27,9 @@ public sealed class StageRenderer : Control, IDisposable
     private Bitmap? _image;
     private double? _fixedTime;
     private double? _fixedTransition;
+    private double? _fixedCueElapsed;
+    private bool _animationEnabled = true;
+    private readonly GranularLetterRenderer _granular = new();
     private bool _disposed;
     private readonly Dictionary<TextCacheKey, TextLayout> _textCache = new();
     private readonly Dictionary<(string Family, bool Bold), Typeface> _typefaces = new();
@@ -39,14 +42,24 @@ public sealed class StageRenderer : Control, IDisposable
     public StageFrame Frame => _frame;
     public string? MediaError { get; private set; }
     public event Action<string>? Error;
+    public bool AnimationEnabled
+    {
+        get => _animationEnabled;
+        set
+        {
+            _animationEnabled=value;
+            if(!value)_timer.Stop();
+            else if(VisualRoot!=null && !_disposed)_timer.Start();
+        }
+    }
 
     public StageRenderer()
     {
         ClipToBounds = true;
         Focusable = false;
         _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(16.666), DispatcherPriority.Render,
-            (_, _) => { if (IsVisible && !_disposed) InvalidateVisual(); });
-        AttachedToVisualTree += (_, _) => _timer.Start();
+            (_, _) => { if (AnimationEnabled && IsVisible && !_disposed) InvalidateVisual(); });
+        AttachedToVisualTree += (_, _) => { if(AnimationEnabled)_timer.Start(); };
         DetachedFromVisualTree += (_, _) => _timer.Stop();
     }
 
@@ -98,25 +111,28 @@ public sealed class StageRenderer : Control, IDisposable
     }
 
     /// <summary>Deterministic sampling for actual MP4 frames; call on the UI thread.</summary>
-    public void SetRenderTime(double? seconds, double? transitionProgress = null)
+    public void SetRenderTime(double? seconds, double? transitionProgress = null, double? cueElapsed = null)
     {
         _fixedTime = seconds;
         _fixedTransition = transitionProgress;
+        _fixedCueElapsed = cueElapsed;
         InvalidateVisual();
     }
 
-    public RenderTargetBitmap Capture(int width, int height, double seconds = 0, double transitionProgress = 1)
+    public RenderTargetBitmap Capture(int width, int height, double seconds = 0, double transitionProgress = 1, double? cueElapsed = null)
     {
         var oldSize = Bounds.Size;
         var oldTime = _fixedTime;
         var oldTransition = _fixedTransition;
-        SetRenderTime(seconds, transitionProgress);
+        var oldCueElapsed = _fixedCueElapsed;
+        SetRenderTime(seconds, transitionProgress, cueElapsed);
         Measure(new Size(width, height));
         Arrange(new Rect(0, 0, width, height));
         var bitmap = new RenderTargetBitmap(new PixelSize(width, height), new Vector(96, 96));
         bitmap.Render(this);
         _fixedTime = oldTime;
         _fixedTransition = oldTransition;
+        _fixedCueElapsed = oldCueElapsed;
         if (oldSize.Width > 0 && oldSize.Height > 0) Arrange(new Rect(oldSize));
         return bitmap;
     }
@@ -164,6 +180,13 @@ public sealed class StageRenderer : Control, IDisposable
             context.FillRectangle(new SolidColorBrush(Color.FromArgb((byte)(Math.Clamp(style.Dim, 0, .95) * 255), 0, 0, 0)), rect);
         if (_frame.HideLyrics || string.IsNullOrWhiteSpace(_text)) return;
 
+        if(style.UsePresetAnimation)
+        {
+            var cueTime=_fixedCueElapsed ?? (_fixedTime.HasValue ? _fixedTime.Value : _clock.Elapsed.TotalSeconds-_changedAt);
+            _granular.Draw(context,rect,_text,style,Math.Max(0,cueTime),audio);
+            return;
+        }
+
         var progress = _fixedTransition ?? (style.TransitionSeconds <= 0 ? 1 :
             Math.Clamp((_clock.Elapsed.TotalSeconds - _changedAt) / style.TransitionSeconds, 0, 1));
         progress = Math.Clamp(progress, 0, 1);
@@ -199,6 +222,11 @@ public sealed class StageRenderer : Control, IDisposable
     }
 
     private static double EaseOut(double value) => 1 - Math.Pow(1-value, 3);
+
+    public static IReadOnlyList<AnimationUnitInfo> GetAnimationUnits(string text, StageStyle style, int width=1920, int height=1080)
+        => GranularLetterRenderer.MeasureUnits(text,style,new Size(width,height));
+    public static double GetAnimationDuration(string text,StageStyle style,int width=1920,int height=1080)
+        => AnimationTimeline.TotalDuration(style,GetAnimationUnits(text,style,width,height).Count);
     private static double EaseOutBack(double value)
     {
         const double c1=1.70158;
@@ -476,5 +504,6 @@ public sealed class StageRenderer : Control, IDisposable
         _image = null;
         ClearTextCache();
         _typefaces.Clear();
+        _granular.Dispose();
     }
 }

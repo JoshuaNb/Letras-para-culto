@@ -130,6 +130,15 @@ public sealed class LibraryStore
         style.TextY = double.IsFinite(style.TextY) ? Math.Clamp(style.TextY, .1, .9) : .5;
         style.LyricAnimationSpeed = double.IsFinite(style.LyricAnimationSpeed) ? Math.Clamp(style.LyricAnimationSpeed, .2, 3) : 1;
         style.LyricAnimationIntensity = double.IsFinite(style.LyricAnimationIntensity) ? Math.Clamp(style.LyricAnimationIntensity, 0, 1) : .5;
+        style.AnimationDuration=double.IsFinite(style.AnimationDuration)?Math.Clamp(style.AnimationDuration,0,5):.7;
+        style.AnimationStagger=double.IsFinite(style.AnimationStagger)?Math.Clamp(style.AnimationStagger,0,.5):.06;
+        style.AnimationDelay=double.IsFinite(style.AnimationDelay)?Math.Clamp(style.AnimationDelay,0,3):0;
+        style.AnimationStrength=double.IsFinite(style.AnimationStrength)?Math.Clamp(style.AnimationStrength,0,2):1;
+        style.AnimationLoopPause=double.IsFinite(style.AnimationLoopPause)?Math.Clamp(style.AnimationLoopPause,0,8):1;
+        if(!AnimationPresets.Contains(style.AnimationPreset))style.AnimationPreset="none";
+        if(style.AnimationGranularity is not("Character" or "Word" or "Line" or "Text"))style.AnimationGranularity="Word";
+        if(style.AnimationOrder is not("Forward" or "Reverse" or "Center" or "Random"))style.AnimationOrder="Forward";
+        if(style.AnimationEasing is not("Linear" or "EaseOut" or "EaseInOut" or "Back" or "Elastic" or "Bounce"))style.AnimationEasing="EaseOut";
         if (string.IsNullOrWhiteSpace(style.FontFamily)) style.FontFamily = "Segoe UI";
         if (style.LyricAnimation is not ("None" or "Float" or "Wave" or "Pulse" or "Breathe" or "Sway" or "Bounce" or "Glow" or "Shake")) style.LyricAnimation = "None";
         if (style.Transition is not ("Fade" or "Slide" or "SlideDown" or "SlideLeft" or "SlideRight" or "Zoom" or "Pop" or "Rotate" or "Wipe" or "Typewriter" or "Words" or "Lines" or "Cut")) style.Transition = "Fade";

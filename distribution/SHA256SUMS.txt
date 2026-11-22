@@ -1,0 +1,6 @@
+dee4f903b008d92831f3f63b9db47dd0148973b5eaecfc34a132b0cb50af551c  WorshipStudio-Codigo-Fonte-1.0.0.zip
+b9b527cf195679201b43071cb623bb165cb523c8807115e26b96308b5b909b7a  WorshipStudio-Codigo-Fonte-1.1.0.zip
+2c14e31309e94627b2fee0099e94eadc5e03bfb79a56090aebd78e88e81039a6  WorshipStudio-Codigo-Fonte-1.2.0.zip
+9f8cbb6b8c54818163d41a92fa462785e607d46e6f707a40e848200ac4b6b373  WorshipStudio-Setup-1.0.0.exe
+ed97176a00e2252a5e79776bf46552974992d980a4bbd240ddab439963b4bcaa  WorshipStudio-Setup-1.1.0.exe
+baa830fe16393958c86135f5b5cc4434136ee18f461e4839c77c77ac7e13e7f8  WorshipStudio-Setup-1.2.0.exe
