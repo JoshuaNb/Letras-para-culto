@@ -2,11 +2,13 @@
 
 **Letras para culto · Controle** opera a apresentação do Worship Studio na mesma rede local. O aplicativo é nativo Android, em português brasileiro, gratuito e sem conta, anúncios, nuvem ou serviços Google. Requer Android 8.0 ou superior; o APK não depende de uma arquitetura específica de processador.
 
-[Baixar o APK 1.5.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.5.0/LetrasParaCulto-Controle-1.5.0.apk) · [Instalador de PC 1.5.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.5.0/WorshipStudio-Setup-1.5.0.exe).
+[Baixar o APK 1.6.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.6.0/LetrasParaCulto-Controle-1.6.0.apk) · [Instalador de PC 1.6.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.6.0/WorshipStudio-Setup-1.6.0.exe).
 
 O instalador de PC também inclui o arquivo Android. Abra **Conexões → Baixar APK para Android…**, escolha onde salvar e transfira o APK ao celular, por exemplo por cabo. Salvar essa cópia não exige internet; se o arquivo não estiver presente na instalação, o botão abre o download oficial da mesma versão no GitHub.
 
 ## Preparar e conectar
+
+Para enviar arquivos, atualize o PC e o APK para 1.6 ou superior. Depois de conectar, toque em **Enviar arquivos**. A seleção é local, com até dez arquivos e 512 MB por arquivo; progresso e cancelamento aparecem no próprio controle. O PC guarda os concluídos em **Conexões → Arquivos recebidos do celular**. [Guia de transferência](TRANSFERIR-ARQUIVOS.md).
 
 1. Abra o APK baixado no Android e conclua a instalação pela interface do aparelho.
 2. Conecte celular e computador à mesma rede local. O PC pode estar por cabo e o celular por Wi-Fi, desde que consigam comunicar-se nessa rede.

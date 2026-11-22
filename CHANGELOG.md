@@ -2,6 +2,18 @@
 
 O projeto é publicado como **Letras para culto**. O aplicativo e os arquivos de PC mantêm o nome **Worship Studio**, preservando a atualização das instalações existentes.
 
+## 1.6.0 — Enviar arquivos do celular ao PC
+
+- Transferência local no APK e no navegador, com até dez arquivos por lote, 512 MB por arquivo, progresso e cancelamento, independente dos comandos da projeção.
+- Janela **Arquivos recebidos do celular** para salvar cópias, aplicar imagens/vídeos como fundo ou importar letras TXT/JSON/OpenLyrics por ação explícita.
+- Recebimento autenticado em streaming com SHA256, nomes Windows validados, proteção contra sobrescrita e publicação atômica; interrupções descartam arquivos incompletos.
+- Caixa de entrada limitada a 5 GB e 5.000 arquivos; um recebimento por vez, sem bloquear a navegação da apresentação.
+- APK usa o seletor local do Android sem permissão geral de armazenamento. Pausar, desconectar ou cancelar interrompe o lote, sem reenvio automático.
+- Consulta dos recebidos e operações de mídia fora da thread da interface; versão do APK exibida a partir do pacote real.
+- Mantidas as edições atual/legado, quatro temas, animações, Holyrics e atualização pelo aplicativo.
+
+[Notas 1.6](docs/releases/v1.6.0.md) · [Como transferir](docs/TRANSFERIR-ARQUIVOS.md). O APK e o PC precisam de 1.6 para o novo envio; controles anteriores continuam compatíveis com a projeção.
+
 ## 1.5.0 — Compatibilidade com Windows antigos
 
 - Instalador universal x64 para Windows 7 SP1, 8, 8.1, 10 e 11, com seleção automática de .NET 10 ou .NET 6.0.36 e runtimes incluídos para instalação offline.

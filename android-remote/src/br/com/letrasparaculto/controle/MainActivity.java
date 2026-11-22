@@ -2,12 +2,17 @@ package br.com.letrasparaculto.controle;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ClipData;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.net.Uri;
+import android.provider.OpenableColumns;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.view.View;
@@ -18,10 +23,14 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.ProgressBar;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.io.InputStream;
+import java.io.IOException;
 
 @SuppressWarnings("deprecation") // API 26-compatible system-bar APIs; insets are applied explicitly below.
 public final class MainActivity extends Activity {
@@ -31,11 +40,22 @@ public final class MainActivity extends Activity {
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final RemoteClient client = new RemoteClient();
-    private RemoteConnection connection;
+    private final RemoteUploadClient uploadClient = new RemoteUploadClient();
+    private final ExecutorService uploadWorker = Executors.newSingleThreadExecutor();
+    private volatile RemoteConnection connection;
     private LinearLayout root, connectPanel, controller, slides;
     private TextView status, liveTitle, position, lyrics, connectedHost, connectionHelp;
     private EditText address, pairCode;
     private Button connect, next, previous, blackout, hide, pulse;
+    private Button sendFiles, cancelTransfer;
+    private TextView transferStatus;
+    private ProgressBar transferProgress;
+    private static final int PICK_FILES = 1601;
+    private static final int MAX_BATCH_FILES = 10;
+    private volatile int uploadGeneration;
+    private boolean uploadBusy;
+    private RemoteConnection pickerConnection, pendingUploadConnection;
+    private ArrayList<Uri> pendingFiles;
     private volatile boolean resumed, destroyed;
     private volatile int generation;
     private boolean busy, commandPending;
@@ -70,7 +90,10 @@ public final class MainActivity extends Activity {
         root.addView(status);
         buildConnectionPanel();
         buildController();
-        TextView footer = text("1.4.0 · Gratuito, sem conta e sem nuvem", 11, MUTED, false);
+        String version = "";
+        try { version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; }
+        catch (android.content.pm.PackageManager.NameNotFoundException ignored) { }
+        TextView footer = text(version + " · Gratuito, sem conta e sem nuvem", 11, MUTED, false);
         footer.setPadding(0, dp(20), 0, 0);
         root.addView(footer);
     }
@@ -143,6 +166,7 @@ public final class MainActivity extends Activity {
         pulse = button("Pulso de efeito", false);
         pulse.setOnClickListener(v -> command("tap", null));
         controller.addView(pulse, match(52));
+        buildTransferPanel();
         TextView sequence = text("ESTROFES DA APRESENTAÇÃO", 11, MUTED, true);
         sequence.setPadding(0, dp(24), 0, dp(12));
         controller.addView(sequence);
@@ -155,6 +179,180 @@ public final class MainActivity extends Activity {
         disconnectLayout.topMargin = dp(20);
         controller.addView(disconnect, disconnectLayout);
         root.addView(controller, match(-2));
+    }
+
+    private void buildTransferPanel() {
+        controller.addView(spacer(18));
+        LinearLayout transfer = card();
+        transfer.addView(text("ARQUIVOS PARA O PC", 11, MUTED, true));
+        transfer.addView(spacer(10));
+        transfer.addView(text("Escolha arquivos deste celular. Eles ficam em Recebidos no computador; a apresentação continua disponível durante o envio.", 13, TEXT, false));
+        transfer.addView(spacer(12));
+        sendFiles = button("Enviar arquivos ao PC", true);
+        sendFiles.setOnClickListener(v -> pickFiles());
+        transfer.addView(sendFiles, match(52));
+        transferStatus = text("Até 10 arquivos por seleção · 512 MB por arquivo", 12, MUTED, false);
+        transferStatus.setPadding(0, dp(12), 0, dp(10));
+        transferStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        transfer.addView(transferStatus);
+        transferProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        transferProgress.setMax(1000);
+        transferProgress.setVisibility(View.GONE);
+        transfer.addView(transferProgress, match(8));
+        cancelTransfer = button("Cancelar envio", false);
+        cancelTransfer.setVisibility(View.GONE);
+        cancelTransfer.setOnClickListener(v -> cancelUploads("Envio cancelado. Confira os arquivos já concluídos em Recebidos no PC."));
+        LinearLayout.LayoutParams cancelLayout = match(46);
+        cancelLayout.topMargin = dp(10);
+        transfer.addView(cancelTransfer, cancelLayout);
+        controller.addView(transfer, match(-2));
+    }
+
+    private void pickFiles() {
+        if (connection == null || !resumed || uploadBusy) return;
+        pickerConnection = connection;
+        Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        picker.addCategory(Intent.CATEGORY_OPENABLE);
+        picker.setType("*/*");
+        picker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        picker.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try { startActivityForResult(picker, PICK_FILES); }
+        catch (android.content.ActivityNotFoundException error) {
+            pickerConnection = null;
+            transferStatus.setText("Este celular não disponibilizou um seletor de arquivos.");
+            transferStatus.setTextColor(DANGER);
+        }
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != PICK_FILES) return;
+        RemoteConnection selected = pickerConnection;
+        pickerConnection = null;
+        if (resultCode != RESULT_OK || data == null || selected == null || selected != connection) return;
+        ArrayList<Uri> files = new ArrayList<>();
+        ClipData multiple = data.getClipData();
+        if (multiple != null) {
+            if (multiple.getItemCount() > MAX_BATCH_FILES) { transferStatus.setText("Selecione até 10 arquivos por vez."); transferStatus.setTextColor(DANGER); return; }
+            for (int index = 0; index < multiple.getItemCount(); index++) {
+                Uri uri = multiple.getItemAt(index).getUri();
+                if (uri != null && !files.contains(uri)) files.add(uri);
+            }
+        } else if (data.getData() != null) files.add(data.getData());
+        for (Uri uri : files) {
+            if (!"content".equalsIgnoreCase(uri.getScheme())) { transferStatus.setText("Use o seletor de documentos para escolher um arquivo local."); transferStatus.setTextColor(DANGER); return; }
+        }
+        if (files.isEmpty()) return;
+        pendingFiles = files;
+        pendingUploadConnection = selected;
+        // Android can deliver this callback before onResume after the system picker.
+        if (resumed) startPendingUploads();
+    }
+
+    private void startPendingUploads() {
+        if (pendingFiles == null || uploadBusy || !resumed || destroyed) return;
+        final ArrayList<Uri> files = pendingFiles;
+        final RemoteConnection selected = pendingUploadConnection;
+        pendingFiles = null;
+        pendingUploadConnection = null;
+        if (selected == null || selected != connection) return;
+        uploadBusy = true;
+        sendFiles.setEnabled(false);
+        transferProgress.setVisibility(View.VISIBLE);
+        transferProgress.setIndeterminate(true);
+        cancelTransfer.setVisibility(View.VISIBLE);
+        transferStatus.setText("Preparando envio… Os comandos do culto continuam disponíveis.");
+        transferStatus.setTextColor(ACCENT);
+        final int current = ++uploadGeneration;
+        uploadWorker.execute(() -> {
+            int completed = 0;
+            try {
+                if (!validUpload(current, selected)) return;
+                uploadClient.files(selected, () -> !validUpload(current, selected)); // Check receiving before opening a file.
+                for (int index = 0; index < files.size(); index++) {
+                    if (!validUpload(current, selected)) throw new RemoteUploadClient.CancelledException();
+                    final int item = index + 1;
+                    final FileInfo info = fileInfo(files.get(index));
+                    RemoteUploadClient.validateName(info.name);
+                    if (info.size > RemoteUploadClient.MAX_FILE_BYTES) throw new IOException("Cada arquivo pode ter até 512 MB.");
+                    if (!validUpload(current, selected)) throw new RemoteUploadClient.CancelledException();
+                    InputStream input = getContentResolver().openInputStream(files.get(index));
+                    if (input == null) throw new IOException("Não foi possível ler o arquivo selecionado.");
+                    if (!validUpload(current, selected)) { input.close(); throw new RemoteUploadClient.CancelledException(); }
+                    final long[] lastUpdate = {0};
+                    uploadClient.upload(selected, info.name, info.size, input, (sent, total) -> {
+                        long now = android.os.SystemClock.uptimeMillis();
+                        if (now - lastUpdate[0] < 150 && sent != 0 && sent != total) return;
+                        lastUpdate[0] = now;
+                        ui.post(() -> {
+                            if (!validUpload(current, selected)) return;
+                            transferProgress.setIndeterminate(total < 0);
+                            if (total >= 0) transferProgress.setProgress(total == 0 ? 1000 : (int)(sent * 1000 / total));
+                            transferStatus.setText("Enviando " + item + "/" + files.size() + " · " + info.name + "\n" + size(sent) + (total >= 0 ? " / " + size(total) : " enviados"));
+                        });
+                    }, () -> !validUpload(current, selected));
+                    completed++;
+                }
+                final int count = completed;
+                ui.post(() -> {
+                    if (!validUpload(current, selected)) return;
+                    finishUpload(count == 1 ? "Arquivo recebido no PC. Abra Recebidos no Worship Studio." : count + " arquivos recebidos no PC. Abra Recebidos no Worship Studio.", false);
+                });
+            } catch (Exception error) {
+                final int count = completed;
+                ui.post(() -> {
+                    if (!validUpload(current, selected)) return;
+                    String description = uploadError(error);
+                    finishUpload(description + (count > 0 ? "\n" + count + " arquivo(s) já concluído(s) permanecem em Recebidos." : ""), true);
+                    if (error instanceof RemoteClient.AccessExpiredException) disconnect(error.getMessage());
+                });
+            }
+        });
+    }
+
+    private FileInfo fileInfo(Uri uri) throws IOException {
+        String name = "arquivo";
+        long size = -1;
+        try (Cursor cursor = getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE}, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME), sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+                if (nameIndex >= 0 && !cursor.isNull(nameIndex)) name = cursor.getString(nameIndex);
+                if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) size = cursor.getLong(sizeIndex);
+            }
+        } catch (RuntimeException error) { throw new IOException("Não foi possível consultar o arquivo selecionado."); }
+        if (size < -1) size = -1;
+        return new FileInfo(name, size);
+    }
+
+    private boolean validUpload(int current, RemoteConnection selected) { return !destroyed && resumed && uploadGeneration == current && connection == selected; }
+    private void finishUpload(String value, boolean error) {
+        uploadBusy = false;
+        sendFiles.setEnabled(connection != null);
+        transferProgress.setVisibility(View.GONE);
+        cancelTransfer.setVisibility(View.GONE);
+        transferStatus.setText(value);
+        transferStatus.setTextColor(error ? DANGER : ACCENT);
+    }
+    private void cancelUploads(String reason) {
+        ++uploadGeneration;
+        pendingFiles = null;
+        pendingUploadConnection = null;
+        uploadClient.cancel();
+        if (uploadBusy) finishUpload(reason, false);
+    }
+    private String uploadError(Exception error) {
+        if (error instanceof SecurityException) return "O celular retirou o acesso ao arquivo. Selecione-o novamente.";
+        if (error instanceof java.net.SocketTimeoutException || error instanceof java.net.ConnectException || error instanceof java.net.NoRouteToHostException)
+            return "O envio perdeu a conexão. Confira a rede e Recebidos no PC antes de tentar novamente.";
+        if (error instanceof IOException && error.getMessage() != null) return error.getMessage();
+        return "O envio não foi confirmado. Confira Recebidos no PC antes de tentar novamente.";
+    }
+    private static String size(long bytes) { return String.format(java.util.Locale.getDefault(), bytes >= 1024 * 1024 ? "%.1f MB" : "%.1f KB", bytes >= 1024 * 1024 ? bytes / 1048576d : bytes / 1024d); }
+    private static final class FileInfo {
+        final String name;
+        final long size;
+        FileInfo(String name, long size) { this.name = name; this.size = size; }
     }
 
     private void connect() {
@@ -313,6 +511,8 @@ public final class MainActivity extends Activity {
     }
 
     private void disconnect(String reason) {
+        cancelUploads("Envio interrompido. Arquivos já concluídos permanecem em Recebidos.");
+        pickerConnection = null;
         ++generation;
         busy = false;
         commandPending = false;
@@ -343,9 +543,10 @@ public final class MainActivity extends Activity {
     private void schedule() { ui.removeCallbacks(poll); if (resumed && connection != null && !destroyed && !commandPending) ui.postDelayed(poll, 900); }
     private void message(String value, boolean error) { status.setText(value); status.setTextColor(error ? DANGER : connection == null ? MUTED : ACCENT); }
 
-    @Override protected void onResume() { super.onResume(); resumed = true; schedule(); }
+    @Override protected void onResume() { super.onResume(); resumed = true; schedule(); startPendingUploads(); }
     @Override protected void onPause() {
         resumed = false;
+        if (uploadBusy) cancelUploads("Envio interrompido ao sair do aplicativo. Confira Recebidos no PC antes de enviar novamente.");
         ++generation;
         busy = false;
         commandPending = false;
@@ -354,7 +555,7 @@ public final class MainActivity extends Activity {
         client.cancel();
         super.onPause();
     }
-    @Override protected void onDestroy() { destroyed = true; ++generation; ui.removeCallbacksAndMessages(null); client.cancel(); worker.shutdownNow(); connection = null; super.onDestroy(); }
+    @Override protected void onDestroy() { destroyed = true; ++generation; cancelUploads("Envio interrompido."); pickerConnection = null; ui.removeCallbacksAndMessages(null); client.cancel(); worker.shutdownNow(); uploadWorker.shutdownNow(); connection = null; super.onDestroy(); }
 
     private LinearLayout vertical() { LinearLayout layout = new LinearLayout(this); layout.setOrientation(LinearLayout.VERTICAL); return layout; }
     private LinearLayout card() { LinearLayout layout = vertical(); layout.setPadding(dp(17), dp(18), dp(17), dp(18)); layout.setBackground(shape(PANEL, Color.rgb(57, 62, 69))); return layout; }

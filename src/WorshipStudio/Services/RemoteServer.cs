@@ -30,8 +30,14 @@ public sealed class RemoteServer : IDisposable
     public bool IsRunning => _listener != null;
     public IReadOnlyList<string> Urls => GetLocalAddresses().Select(ip => $"http://{ip}:{Port}/?token={Token}").ToArray();
     public event Action<string>? Error;
+    public ReceivedFileStore ReceivedFiles { get; }
+    public event Action<ReceivedFile>? FileReceived;
 
-    public RemoteServer(TimeProvider? timeProvider = null) => _timeProvider = timeProvider ?? TimeProvider.System;
+    public RemoteServer(TimeProvider? timeProvider = null, ReceivedFileStore? receivedFiles = null)
+    {
+        _timeProvider = timeProvider ?? TimeProvider.System;
+        ReceivedFiles = receivedFiles ?? new ReceivedFileStore();
+    }
 
     public void Start(int port, Func<object> getState, Action<string, int?> command, IPAddress? listenAddress = null)
     {
@@ -79,7 +85,9 @@ public sealed class RemoteServer : IDisposable
             {
                 var client = await listener.AcceptTcpClientAsync(cancellationToken);
                 if (!await _clients.WaitAsync(0, cancellationToken)) { client.Dispose(); continue; }
-                _ = Serve(client, cancellationToken);
+                // Inbox metadata may use synchronous filesystem APIs before the first network await.
+                // Keep that work off the accept loop so projection commands can still connect.
+                _ = Task.Run(() => Serve(client, cancellationToken));
             }
         }
         catch (OperationCanceledException) { }
@@ -95,6 +103,7 @@ public sealed class RemoteServer : IDisposable
         {
             timeout.CancelAfter(TimeSpan.FromSeconds(8));
             var ct = timeout.Token;
+            var gracefulClose = false;
             try
             {
                 if (client.Client.RemoteEndPoint is not IPEndPoint remote || !IsLocalAddress(remote.Address)) return;
@@ -114,15 +123,53 @@ public sealed class RemoteServer : IDisposable
                 var first = lines[0].Split(' ');
                 if (first.Length != 3 || !first[1].StartsWith('/')) { await Reply(stream, 400, "text/plain", "Requisição inválida.", ct); return; }
                 var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var duplicateHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var line in lines.Skip(1))
                 {
                     var colon = line.IndexOf(':');
-                    if (colon > 0) headers[line[..colon].Trim()] = line[(colon + 1)..].Trim();
+                    if (colon > 0)
+                    {
+                        var name = line[..colon].Trim();
+                        if (headers.ContainsKey(name)) duplicateHeaders.Add(name);
+                        headers[name] = line[(colon + 1)..].Trim();
+                    }
+                }
+                var path = first[1].Split('?')[0];
+                if (path == "/files")
+                {
+                    gracefulClose = first[0] == "POST";
+                    // A file body can be large: authenticate and validate headers before reading a byte of it.
+                    if (!headers.TryGetValue("Authorization", out var fileAuthorization) || !ValidToken(fileAuthorization))
+                    { await Reply(stream, 401, "application/json", "{\"error\":\"Acesso expirado. Conecte novamente ao PC.\"}", ct); return; }
+                    if (duplicateHeaders.Any(name => name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase) ||
+                        name.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase) || name.Equals("X-File-Name", StringComparison.OrdinalIgnoreCase) ||
+                        name.Equals("Authorization", StringComparison.OrdinalIgnoreCase)))
+                    { await Reply(stream, 400, "application/json", "{\"error\":\"Cabeçalhos de transferência ambíguos.\"}", ct); return; }
+                    if (first[0] == "POST")
+                    {
+                        timeout.CancelAfter(TimeSpan.FromMinutes(15));
+                        gracefulClose = await ReceiveFile(stream, headers, ct);
+                    }
+                    else if (first[0] == "GET")
+                    {
+                        try
+                        {
+                            await Reply(stream, 200, "application/json; charset=utf-8", JsonSerializer.Serialize(new
+                            {
+                                maxFileBytes = ReceivedFiles.MaximumFileBytes,
+                                storageLimitBytes = ReceivedFiles.MaximumStorageBytes,
+                                files = ReceivedFiles.List(100)
+                            }, JsonOptions), ct);
+                        }
+                        catch (IOException) { await Reply(stream, 507, "application/json", "{\"error\":\"Não foi possível ler a pasta de recebidos no PC.\"}", ct); }
+                        catch (UnauthorizedAccessException) { await Reply(stream, 507, "application/json", "{\"error\":\"Sem acesso à pasta de recebidos no PC.\"}", ct); }
+                    }
+                    else await Reply(stream, 405, "application/json", "{\"error\":\"Método de transferência inválido.\"}", ct);
+                    return;
                 }
                 byte[] body;
                 try { body = await ReadBody(stream, headers, ct); }
                 catch (InvalidDataException) { await Reply(stream, 400, "application/json", "{\"error\":\"Corpo inválido ou muito grande\"}", ct); return; }
-                var path = first[1].Split('?')[0];
                 if (first[0] == "GET" && path == "/")
                 {
                     await Reply(stream, 200, "text/html; charset=utf-8", ControllerHtml, ct); return;
@@ -179,8 +226,150 @@ public sealed class RemoteServer : IDisposable
             catch (JsonException) { }
             catch (KeyNotFoundException) { }
             catch (Exception ex) { Error?.Invoke("Controle remoto: " + ex.Message); }
-            finally { _clients.Release(); }
+            finally
+            {
+                // A rejected upload may already have body bytes in flight. Send FIN before closing,
+                // and discard a small bounded tail so Windows does not reset a valid HTTP error response.
+                if (gracefulClose) await GracefulClose(client).ConfigureAwait(false);
+                _clients.Release();
+            }
         }
+    }
+
+    private static async Task GracefulClose(TcpClient client)
+    {
+        try
+        {
+            var stream = client.GetStream();
+            client.Client.Shutdown(SocketShutdown.Send);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+            var buffer = new byte[8192];
+            for (var received = 0; received < 64 * 1024;)
+            {
+                var count = await stream.ReadAsync(buffer, timeout.Token).ConfigureAwait(false);
+                if (count == 0) break;
+                received += count;
+            }
+        }
+        catch (Exception ex) when (ex is SocketException or IOException or InvalidOperationException or OperationCanceledException or ObjectDisposedException) { }
+    }
+
+    private async Task<bool> ReceiveFile(NetworkStream stream, Dictionary<string, string> headers, CancellationToken ct)
+    {
+        try
+        {
+            if (!headers.TryGetValue("Content-Type", out var contentType) || !contentType.Split(';')[0].Trim().Equals("application/octet-stream", StringComparison.OrdinalIgnoreCase))
+                throw new ReceivedFileException(415, "Envie o arquivo como application/octet-stream.");
+            if (!headers.TryGetValue("X-File-Name", out var encodedName)) throw new ReceivedFileException(400, "O nome do arquivo não foi informado.");
+            var name = DecodeFileName(encodedName);
+            long? length = null;
+            var chunked = headers.TryGetValue("Transfer-Encoding", out var encoding);
+            if (chunked)
+            {
+                if (!encoding!.Equals("chunked", StringComparison.OrdinalIgnoreCase) || headers.ContainsKey("Content-Length"))
+                    throw new ReceivedFileException(400, "O enquadramento da transferência é inválido.");
+            }
+            else
+            {
+                if (!headers.TryGetValue("Content-Length", out var value)) throw new ReceivedFileException(411, "Informe o tamanho ou use transferência em blocos.");
+                if (!long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var number)) throw new ReceivedFileException(400, "O tamanho do arquivo é inválido.");
+                length = number;
+            }
+            if (headers.TryGetValue("Expect", out var expectation) && !expectation.Equals("100-continue", StringComparison.OrdinalIgnoreCase))
+                throw new ReceivedFileException(417, "A expectativa da transferência não é aceita.");
+            var file = await ReceivedFiles.ReceiveAsync(name, length, async (target, token) =>
+            {
+                if (expectation != null) await stream.WriteAsync(Encoding.ASCII.GetBytes("HTTP/1.1 100 Continue\r\n\r\n"), token).ConfigureAwait(false);
+                await CopyFileBody(stream, target, length, chunked, token).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
+            try { FileReceived?.Invoke(file); }
+            catch (Exception ex) { AppLog.Write("Notificação de arquivo recebido: " + ex.Message); }
+            await Reply(stream, 201, "application/json; charset=utf-8", JsonSerializer.Serialize(new { ok = true, file }, JsonOptions), ct);
+            return false;
+        }
+        catch (ReceivedFileException ex)
+        { await Reply(stream, ex.StatusCode, "application/json; charset=utf-8", JsonSerializer.Serialize(new { error = ex.Message }), ct); return true; }
+        catch (ArgumentException)
+        { await Reply(stream, 400, "application/json", "{\"error\":\"O nome do arquivo é inválido.\"}", ct); return true; }
+    }
+
+    private async Task CopyFileBody(NetworkStream source, Stream target, long? length, bool chunked, CancellationToken ct)
+    {
+        var buffer = new byte[64 * 1024];
+        async Task Copy(long count)
+        {
+            while (count > 0)
+            {
+                var read = await ReadUpload(source, buffer.AsMemory(0, (int)Math.Min(buffer.Length, count)), ct).ConfigureAwait(false);
+                if (read == 0) throw new ReceivedFileException(400, "A transferência foi interrompida antes do fim do arquivo.");
+                await target.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+                count -= read;
+            }
+        }
+        if (!chunked) { await Copy(length!.Value).ConfigureAwait(false); return; }
+        long received = 0;
+        for (var chunks = 0; chunks < 1_000_000; chunks++)
+        {
+            var line = await ReadUploadLine(source, 128, ct).ConfigureAwait(false);
+            if (!long.TryParse(line.Split(';')[0], NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var count) || count < 0)
+                throw new ReceivedFileException(400, "Um bloco da transferência é inválido.");
+            if (count > ReceivedFiles.MaximumFileBytes - received) throw new ReceivedFileException(413, "O arquivo excede o limite de envio permitido pelo PC.");
+            if (count == 0)
+            {
+                for (var trailer = 0; trailer < 16; trailer++)
+                    if ((await ReadUploadLine(source, 512, ct).ConfigureAwait(false)).Length == 0) return;
+                throw new ReceivedFileException(400, "O fim da transferência é inválido.");
+            }
+            await Copy(count).ConfigureAwait(false);
+            received += count;
+            if ((await ReadUploadLine(source, 2, ct).ConfigureAwait(false)).Length != 0) throw new ReceivedFileException(400, "Um bloco da transferência é inválido.");
+        }
+        throw new ReceivedFileException(400, "A transferência contém blocos demais.");
+    }
+
+    private static async Task<int> ReadUpload(NetworkStream stream, Memory<byte> buffer, CancellationToken ct)
+    {
+        using var idle = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        idle.CancelAfter(TimeSpan.FromSeconds(60));
+        try { return await stream.ReadAsync(buffer, idle.Token).ConfigureAwait(false); }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        { throw new ReceivedFileException(408, "A transferência ficou sem receber dados por um minuto. Tente novamente."); }
+    }
+
+    private static async Task<string> ReadUploadLine(NetworkStream stream, int maximum, CancellationToken ct)
+    {
+        var bytes = new List<byte>();
+        var next = new byte[1];
+        while (bytes.Count <= maximum + 1)
+        {
+            if (await ReadUpload(stream, next, ct).ConfigureAwait(false) == 0) throw new ReceivedFileException(400, "A transferência foi interrompida antes do fim do arquivo.");
+            bytes.Add(next[0]);
+            if (bytes.Count >= 2 && bytes[^2] == 13 && bytes[^1] == 10) return Encoding.ASCII.GetString(bytes.ToArray(), 0, bytes.Count - 2);
+        }
+        throw new ReceivedFileException(400, "Um bloco da transferência é inválido.");
+    }
+
+    private static string DecodeFileName(string encoded)
+    {
+        if (encoded.Length > 2160) throw new ReceivedFileException(400, "O nome do arquivo é longo demais.");
+        var bytes = new List<byte>(encoded.Length);
+        for (var i = 0; i < encoded.Length; i++)
+        {
+            if (encoded[i] == '%')
+            {
+                if (i + 2 >= encoded.Length || !byte.TryParse(encoded.Substring(i + 1, 2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var value))
+                    throw new ReceivedFileException(400, "O nome do arquivo não está codificado corretamente.");
+                bytes.Add(value);
+                i += 2;
+            }
+            else
+            {
+                if (encoded[i] > 127) throw new ReceivedFileException(400, "O nome do arquivo deve usar codificação UTF-8.");
+                bytes.Add((byte)encoded[i]);
+            }
+        }
+        try { return ReceivedFileStore.ValidateName(new UTF8Encoding(false, true).GetString(bytes.ToArray())); }
+        catch (DecoderFallbackException) { throw new ReceivedFileException(400, "O nome do arquivo não está em UTF-8 válido."); }
     }
 
     private bool ValidToken(string authorization)
@@ -323,10 +512,5 @@ public sealed class RemoteServer : IDisposable
 
     public void Dispose() => Stop();
 
-    private const string ControllerHtml = """
-<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Worship Studio · Controle</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#0b101b;color:#f4f6ff;font:16px system-ui,sans-serif;padding:24px 18px;max-width:680px;margin:auto}header{display:flex;align-items:center;gap:12px}header b{font-size:20px}.mark{background:#818cf8;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:#101224;font-size:24px}small{color:#93a1b8}h1{font-size:24px;margin:30px 0 5px}#preview{white-space:pre-wrap;text-align:center;display:grid;place-content:center;min-height:200px;background:radial-gradient(at top,#293067,#101628);border:1px solid #2b3652;border-radius:18px;padding:24px;font-size:24px;font-weight:650;line-height:1.45;margin:18px 0}button{background:#1c263b;color:#eff2ff;border:1px solid #34415d;border-radius:13px;padding:18px 12px;font:600 17px system-ui;cursor:pointer;touch-action:manipulation;min-height:64px}button:active{transform:scale(.98)}button[disabled]{opacity:.45}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}.primary{background:#827cf5;color:#0c1020;border-color:#827cf5}.active{border-color:#f1b76b;background:#523c2d}.slide{width:100%;text-align:left;margin:5px 0;padding:13px;font-size:15px;white-space:pre-line;min-height:50px}.slide.active{background:#343063;border-color:#9a94ff}#status{display:block;margin-top:16px;min-height:36px}.hint{font-size:13px;line-height:1.6}#slides{margin-top:24px}#disconnect{margin-top:24px;font-size:13px;min-height:40px;padding:10px}</style>
-<header><span class="mark">W</span><div><b>Worship Studio</b><br><small>CONTROLE LOCAL</small></div></header><h1 id="title">Conectando…</h1><small id="position">Rede local · sem internet</small><div id="preview">Aguardando apresentação</div><div class="row"><button data-command="previous">← Anterior</button><button class="primary" data-command="next">Próximo →</button></div><div class="row"><button id="clear" data-command="clear">Ocultar letra</button><button id="blackout" data-command="blackout">Tela preta</button></div><button style="width:100%" data-command="tap">Pulso de efeito ♫</button><small id="status">Conectando ao computador…</small><p class="hint">Use a mesma rede Wi-Fi do computador. A apresentação continua se este celular desconectar.</p><div id="slides"></div><button id="disconnect">Esquecer acesso neste celular</button>
-<script>const q=new URLSearchParams(location.search);if(q.has('token')){sessionStorage.setItem('ws-token',q.get('token'));history.replaceState(null,'',location.pathname)}const token=sessionStorage.getItem('ws-token')||'';const $=id=>document.getElementById(id);let busy=false,lastSlides='';async function request(path,options={}){const r=await fetch(path,{...options,headers:{Authorization:'Bearer '+token,...options.headers},cache:'no-store'});if(!r.ok)throw new Error(r.status===401?'Acesso expirado. Abra novamente o endereço mostrado no computador.':'Sem resposta do computador');return r.json()}async function command(command,index){if(busy)return;busy=true;try{await request('/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command,index})});await refresh()}catch(e){$('status').textContent=e.message}finally{busy=false}}async function refresh(){try{const s=await request('/state');$('title').textContent=s.title||'Sem apresentação';$('position').textContent=s.count?'Slide '+(s.index+1)+' de '+s.count:'Selecione um louvor no computador';$('preview').textContent=s.blackout?'Tela preta':s.hideLyrics?'Letra oculta':s.text||'Sem letra ao vivo';$('clear').classList.toggle('active',!!s.hideLyrics);$('blackout').classList.toggle('active',!!s.blackout);$('status').textContent='● Conectado · '+new Date().toLocaleTimeString('pt-BR');const k=JSON.stringify([s.slides,s.index]);if(k!==lastSlides){lastSlides=k;$('slides').replaceChildren();(s.slides||[]).forEach((slide,i)=>{const b=document.createElement('button');b.className='slide'+(i===s.index?' active':'');b.textContent=(i+1)+'. '+(slide.label||'Slide')+'\n'+(slide.text||'');b.onclick=()=>command('slide',i);$('slides').append(b)})}}catch(e){$('status').textContent=e.message}}document.querySelectorAll('[data-command]').forEach(b=>b.onclick=()=>command(b.dataset.command));$('disconnect').onclick=()=>{sessionStorage.removeItem('ws-token');location.reload()};refresh();setInterval(()=>{if(!busy&&!document.hidden)refresh()},900);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});</script></html>
-""";
+    public const string ControllerHtml = RemoteControllerPage.Html;
 }

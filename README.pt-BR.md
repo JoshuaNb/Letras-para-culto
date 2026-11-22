@@ -1,10 +1,10 @@
-# Worship Studio 1.5.0
+# Worship Studio 1.6.0
 
 Aplicativo desktop em C#/Avalonia UI para preparar e projetar letras de louvores. Edição atual .NET 10 e edição legado .NET 6 para Windows 7 SP1, 8, 8.1, 10 e 11 x64. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
 
 ## Instalação e primeira projeção
 
-1. Execute `WorshipStudio-Setup-1.5.0.exe` no Windows x64. O instalador escolhe a edição adequada e inclui .NET, LibVLC e FFmpeg. A instalação é por usuário e preserva a biblioteca. No Windows 7, instale o SP1 e a KB3063858 ou atualização equivalente antes de instalar o programa.
+1. Execute `WorshipStudio-Setup-1.6.0.exe` no Windows x64. O instalador escolhe a edição adequada e inclui .NET, LibVLC e FFmpeg. A instalação é por usuário e preserva a biblioteca. No Windows 7, instale o SP1 e a KB3063858 ou atualização equivalente antes de instalar o programa.
 2. Para dois monitores, escolha **Estender estes vídeos** nas configurações de vídeo do Windows. Ligue o projetor antes de iniciar.
 3. Abra Worship Studio. Na aba **Cena**, escolha o monitor de saída.
 4. Clique **Abrir projeção**. A janela de operação permanece independente da projeção. A janela de saída pode funcionar no mesmo monitor quando não há segunda tela.
@@ -13,7 +13,13 @@ Aplicativo desktop em C#/Avalonia UI para preparar e projetar letras de louvores
 
 O louvor inicial é um texto original curto para conferir a operação. Importe ou cadastre a biblioteca da igreja.
 
-## Novidades da versão 1.5
+## Novidades da versão 1.6
+
+No celular conectado, escolha **Enviar arquivos** no APK ou no navegador. Selecione até dez arquivos locais, cada um com até 512 MB. Acompanhe o progresso ou cancele; os comandos de projeção continuam disponíveis.
+
+No PC, abra **Conexões → Arquivos recebidos do celular**. A lista permite salvar uma cópia de qualquer arquivo, usar imagens/vídeos como fundo e importar letras TXT/JSON/OpenLyrics. O conteúdo só é aplicado quando você escolher. Arquivos concluídos permanecem no PC; transferências incompletas são descartadas. [Guia da transferência](https://github.com/JoshuaNb/Letras-para-culto/blob/main/docs/TRANSFERIR-ARQUIVOS.md).
+
+## Recursos da versão 1.5
 
 - **Windows antigos:** edição legado incluída para Windows 7 SP1, 8, 8.1 e versões anteriores do Windows 10. Letras, animações, Holyrics, controle remoto e MP4 continuam disponíveis. A edição legado renderiza por software; Windows 10 22H2/11 mantém GPU com fallback.
 - **Instalador universal:** seleciona o runtime por versão do Windows e preserva biblioteca e preferências. Não precisa baixar o runtime durante a instalação.

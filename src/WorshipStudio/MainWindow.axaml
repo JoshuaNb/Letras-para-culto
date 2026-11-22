@@ -153,6 +153,8 @@
        <Button x:Name="DownloadApkButton" Content="Baixar APK para Android…" HorizontalAlignment="Stretch"/>
        <TextBox x:Name="RemoteAddress" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="110" Text="Controle remoto desligado"/>
        <Button x:Name="CopyRemoteButton" Content="Copiar endereço"/>
+       <Button x:Name="ReceivedFilesButton" Content="Arquivos recebidos do celular…" HorizontalAlignment="Stretch"/>
+       <TextBlock x:Name="ReceivedFilesSummary" Text="Envie arquivos pelo APK ou pelo navegador após conectar. Até 512 MB por arquivo." TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource WsMuted}"/>
        <TextBlock Text="Se o Windows solicitar, permita o acesso à rede privada. O controle usa apenas a rede local." TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource WsMuted}"/>
        <Border Height="1" Background="{DynamicResource WsBorder}" Margin="0,8"/>
        <TextBlock Text="HOLYRICS · API SERVER" Classes="caption"/>

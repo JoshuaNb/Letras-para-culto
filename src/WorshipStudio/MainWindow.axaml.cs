@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private UpdateRelease? _availableUpdate;
     private bool _checkingUpdates;
     private UpdateWindow? _updateWindow;
+    private ReceivedFilesWindow? _receivedWindow;
     private (string Tag,string Path,string Hash)? _downloadedUpdate;
     private readonly AudioReactiveService _audio = new();
     private readonly RemoteServer _remote = new();
@@ -71,6 +72,12 @@ public partial class MainWindow : Window
         _preview.Error += BackgroundError;
         _programPreview.Error += BackgroundError;
         _remote.Error += BackgroundError;
+        _remote.FileReceived += file=>Dispatcher.UIThread.Post(()=>
+        {
+            if(_closing)return;
+            C<TextBlock>("ReceivedFilesSummary").Text="Recebido: "+file.DisplayName+" · "+ReceivedFilesWindow.FormatBytes(file.Size);
+            _receivedWindow?.RefreshFiles();
+        });
         _audio.Error += BackgroundError;
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
         _saveTimer.Tick += (_,_) => { _saveTimer.Stop(); Persist(); };
@@ -209,6 +216,7 @@ public partial class MainWindow : Window
         });
         Click("RemoteButton",ToggleRemote);
         ClickAsync("DownloadApkButton",DownloadAndroidApk);
+        Click("ReceivedFilesButton",OpenReceivedFiles);
         ClickAsync("CopyRemoteButton",async()=>{var url=_remote.Urls.FirstOrDefault(u=>!u.Contains("127.0.0.1"))??_remote.Urls.FirstOrDefault();if(_remote.IsRunning&&url!=null&&Clipboard!=null){await Clipboard.SetTextAsync(url);Status("Link do controle remoto copiado");}});
         ClickAsync("HolyricsImportButton",ImportHolyrics);
         C<ToggleSwitch>("HolyricsFollowToggle").IsCheckedChanged+=async(_,_)=>
@@ -530,6 +538,35 @@ public partial class MainWindow : Window
         C<TextBlock>("PairingCodeLabel").Text=_remote.PairingCode;
         C<TextBlock>("PairingStatusLabel").Text="Válido até "+_remote.PairingExpiresAt.ToLocalTime().ToString("HH:mm")+" · para renovar, desligue e inicie novamente. Compartilhe apenas com operadores.";
     }
+    private void OpenReceivedFiles()
+    {
+        if(_receivedWindow is {IsVisible:true}){_receivedWindow.Activate();_receivedWindow.RefreshFiles();return;}
+        var window=new ReceivedFilesWindow(_remote.ReceivedFiles,UseReceivedBackground,ImportReceivedLyrics);
+        _receivedWindow=window;
+        window.Closed+=(_,_)=>{if(ReferenceEquals(_receivedWindow,window))_receivedWindow=null;};
+        window.Show(this);
+    }
+
+    private async Task UseReceivedBackground(ReceivedFile file)
+    {
+        if(_startupError!=null)throw new InvalidOperationException("Resolva o erro da biblioteca antes de alterar a cena.");
+        if(!ReceivedFilesWindow.IsBackground(file.DisplayName))throw new InvalidDataException("Escolha uma imagem ou vídeo para usar como fundo.");
+        var path=await Task.Run(()=>_store.ImportAsset(_remote.ReceivedFiles.GetFilePath(file.Id)));
+        _lifetime.Token.ThrowIfCancellationRequested();
+        var image=ReceivedFilesWindow.IsImage(file.DisplayName);
+        _document.Style=_document.Style with{BackgroundMode=image?"Image":"Video",BackgroundPath=path};LoadStyleControls();RenderFrames();
+        if(!image){_preview.RestartVideo();_projection?.Surface.RestartVideo();}
+        ScheduleSave();Status("Arquivo recebido aplicado como fundo");
+    }
+
+    private async Task ImportReceivedLyrics(ReceivedFile file)
+    {
+        if(_startupError!=null)throw new InvalidOperationException("Resolva o erro da biblioteca antes de importar letras.");
+        var songs=await Task.Run(()=>_holyrics.ImportFile(_remote.ReceivedFiles.GetFilePath(file.Id)));
+        _lifetime.Token.ThrowIfCancellationRequested();
+        var count=AddImported(songs);ScheduleSave();RefreshLibrary();Status($"{count} louvor(es) importado(s) do celular");
+    }
+
     private async Task ImportHolyrics()
     {
         if(_startupError!=null){await Message("Biblioteca preservada","Resolva o erro de carregamento ou restaure um backup antes de importar novas letras.");return;}
@@ -616,7 +653,7 @@ public partial class MainWindow : Window
     private void OnClosing(object? sender,WindowClosingEventArgs e)
     {
         if(_restoring){e.Cancel=true;Status("Aguarde a restauração terminar antes de fechar.");return;}
-        _closing=true;_lifetime.Cancel();_updateWindow?.Close();_tick.Stop();_saveTimer.Stop();_updateTimer.Stop();Persist();StopFollowing();_remote.Dispose();_audio.Dispose();_holyrics.Dispose();_preview.Dispose();_programPreview.Dispose();_projection?.Close();_updater.Dispose();
+        _closing=true;_lifetime.Cancel();_updateWindow?.Close();_receivedWindow?.Close();_tick.Stop();_saveTimer.Stop();_updateTimer.Stop();Persist();StopFollowing();_remote.Dispose();_audio.Dispose();_holyrics.Dispose();_preview.Dispose();_programPreview.Dispose();_projection?.Close();_updater.Dispose();
     }
 
     private void SavePreferences()

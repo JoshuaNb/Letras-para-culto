@@ -1,6 +1,6 @@
-# Compatibilidade com Windows — versão 1.5
+# Compatibilidade com Windows — versão 1.6
 
-O instalador `WorshipStudio-Setup-1.5.0.exe` contém duas publicações completas x64 e escolhe uma conforme o Windows. Não é necessário instalar o SDK nem baixar o runtime durante a instalação.
+O instalador `WorshipStudio-Setup-1.6.0.exe` contém duas publicações completas x64 e escolhe uma conforme o Windows. Não é necessário instalar o SDK nem baixar o runtime durante a instalação.
 
 | Windows x64 | Edição escolhida | Renderização da interface e das letras |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ O pacote legado inclui o runtime .NET 6 completo, com UCRT app-local. Não exige
 - A leitura de comandos remotos, cálculo de hashes e espera do processo de exportação usam APIs presentes no .NET 6, mantendo cancelamento e verificação dos downloads. O atualizador legado pede TLS 1.2 explicitamente.
 - O instalador mantém o AppId e a biblioteca das versões anteriores. Remove apenas nomes de DLLs pertencentes aos payloads para evitar mistura de runtimes ao atualizar.
 
-O controle Android e a importação de letras do Holyrics continuam disponíveis nas duas edições. O APK 1.4 também pode controlar o PC 1.5; o APK 1.5 acompanha a nova distribuição.
+O controle Android e a importação de letras do Holyrics continuam disponíveis nas duas edições. APKs anteriores continuam controlando a projeção. Para enviar arquivos do celular, atualize tanto o PC quanto o APK para 1.6 ou superior. O APK 1.6 acompanha o instalador.
 
 ## Validação e limites
 

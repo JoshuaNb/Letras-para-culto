@@ -122,6 +122,22 @@ try
         C<TabControl>("InspectorTabs").SelectedIndex=0;Pump();
     });
 
+    Check("Recebidos abre sem iniciar a rede ou alterar a apresentação", () =>
+    {
+        C<TabControl>("InspectorTabs").SelectedIndex=1;Pump();
+        var before=preview.Renderer.Frame;
+        var open=C<Button>("ReceivedFilesButton");open.BringIntoView();Pump();Click(open);
+        var inbox=main.OwnedWindows.OfType<ReceivedFilesWindow>().Single(w=>w.IsVisible);inbox.UpdateLayout();Pump();
+        T R<T>(string name) where T:Control=>inbox.GetVisualDescendants().OfType<T>().Single(c=>c.Name==name);
+        WaitUntil(()=>R<Button>("ReceivedRefresh").IsEnabled);
+        Require(R<ListBox>("ReceivedFilesList").ItemCount==0,"A caixa de entrada isolada deveria estar vazia.");
+        Require(!R<Button>("ReceivedUseBackground").IsEnabled&&!R<Button>("ReceivedImportLyrics").IsEnabled&&!R<Button>("ReceivedSaveCopy").IsEnabled,"Ações foram habilitadas sem arquivo selecionado.");
+        Require(C<TextBlock>("PairingCodeLabel").Text=="— — — — — —","Abrir a caixa iniciou o servidor.");
+        Require(preview.Renderer.Frame.Text==before.Text&&preview.Renderer.Frame.Style==before.Style,"O recebimento alterou a cena sem escolha do operador.");
+        Capture(inbox,"received-empty");Click(R<Button>("ReceivedClose"));Pump();
+        C<TabControl>("InspectorTabs").SelectedIndex=0;Pump();
+    });
+
     Check("Baixar letras abre a janela real do Holyrics e cancelar preserva a biblioteca", () =>
     {
         C<TabControl>("InspectorTabs").SelectedIndex=1;Pump();
@@ -289,6 +305,46 @@ try
         var cancel = editor.GetVisualDescendants().OfType<Button>().Single(b => b.Content as string == "Cancelar");
         Click(cancel);
         Require(!editor.IsVisible && preview.Renderer.Frame.Style == before, "Cancelar alterou a cena ou manteve a galeria aberta.");
+    });
+
+    Check("Arquivos recebidos persistem e só entram na biblioteca ou cena por ação explícita", () =>
+    {
+        var data=Path.Combine(isolatedData,"inbox-operation");
+        var inboxStore=new ReceivedFileStore(Path.Combine(data,"received"));
+        var words=Encoding.UTF8.GetBytes("[Refrão]\nGraça e paz\nAleluia");
+        var songFile=inboxStore.ReceiveAsync("Louvor transferido.txt",words.Length,async(stream,ct)=>await stream.WriteAsync(words,ct)).GetAwaiter().GetResult();
+        byte[] png;
+        using(var bitmap=new SkiaSharp.SKBitmap(16,16))
+        {
+            bitmap.Erase(SkiaSharp.SKColors.Teal);
+            using var image=SkiaSharp.SKImage.FromBitmap(bitmap);using var encoded=image.Encode(SkiaSharp.SKEncodedImageFormat.Png,100);png=encoded.ToArray();
+        }
+        var imageFile=inboxStore.ReceiveAsync("Fundo recebido.png",png.Length,async(stream,ct)=>await stream.WriteAsync(png,ct)).GetAwaiter().GetResult();
+        var doc=LibraryStore.CreateInitial();doc.Style.BackgroundMode="Solid";new LibraryStore(data).Save(doc);
+        MainWindow? operation=null;
+        var oldOverride=LibraryStore.DataDirectoryOverride;
+        try
+        {
+            LibraryStore.DataDirectoryOverride=data;operation=new MainWindow();operation.Show();operation.UpdateLayout();Pump();
+            T O<T>(string name) where T:Control=>operation.FindControl<T>(name)!;
+            O<TabControl>("InspectorTabs").SelectedIndex=1;operation.UpdateLayout();var button=O<Button>("ReceivedFilesButton");button.BringIntoView();Pump();Click(button);
+            var inbox=operation.OwnedWindows.OfType<ReceivedFilesWindow>().Single(w=>w.IsVisible);inbox.UpdateLayout();Pump();
+            T R<T>(string name) where T:Control=>inbox.GetVisualDescendants().OfType<T>().Single(c=>c.Name==name);
+            var list=R<ListBox>("ReceivedFilesList");WaitUntil(()=>list.ItemCount==2);
+            Require(new LibraryStore(data).Load().Songs.Count==1&&new LibraryStore(data).Load().Style.BackgroundMode=="Solid","Receber arquivos aplicou conteúdo automaticamente.");
+            list.SelectedItem=list.Items.OfType<ReceivedFile>().Single(f=>f.Id==songFile.Id);inbox.UpdateLayout();Pump();
+            Require(R<Button>("ReceivedImportLyrics").IsEnabled&&!R<Button>("ReceivedUseBackground").IsEnabled,"As ações não acompanham o tipo TXT.");
+            Click(R<Button>("ReceivedImportLyrics"));
+            WaitUntil(()=>O<ListBox>("LibraryList").Items.OfType<Song>().Any(s=>s.Title=="Louvor transferido"));
+            list.SelectedItem=list.Items.OfType<ReceivedFile>().Single(f=>f.Id==imageFile.Id);inbox.UpdateLayout();Pump();
+            Require(R<Button>("ReceivedUseBackground").IsEnabled&&!R<Button>("ReceivedImportLyrics").IsEnabled,"As ações não acompanham a imagem.");
+            Click(R<Button>("ReceivedUseBackground"));var surface=(StageSurface)O<ContentControl>("PreviewHost").Content!;WaitUntil(()=>surface.Renderer.Frame.Style.BackgroundMode=="Image");
+            Capture(inbox,"received-with-files");Click(R<Button>("ReceivedClose"));Pump();operation.Close();Pump();
+            var saved=new LibraryStore(data).Load();Require(saved.Songs.Any(s=>s.Title=="Louvor transferido"),"A letra recebida não foi salva ao fechar.");Require(File.Exists(saved.Style.BackgroundPath),"A imagem não foi copiada à mídia da biblioteca.");
+            Require(File.ReadAllBytes(saved.Style.BackgroundPath!).SequenceEqual(png),"A cópia de mídia difere do arquivo recebido.");
+            Require(inboxStore.List().Count==2&&File.Exists(inboxStore.GetFilePath(songFile.Id)),"Usar arquivos removeu o original recebido.");
+        }
+        finally{operation?.Close();LibraryStore.DataDirectoryOverride=oldOverride;Pump();}
     });
 
     Check("Fechar projeção apaga o retorno e conserva a janela de operação", () =>

@@ -1,4 +1,39 @@
-# Verificação — Worship Studio 1.5.0
+# Verificação — Worship Studio 1.6.0
+
+## Resultado 1.6 — arquivos do celular ao PC
+
+**690 verificações aprovadas, zero falhas finais.** Os testes de núcleo, renderização e interface usam os runtimes .NET 10 e .NET 6.0.36 no Windows 11 disponível. O teste de rede utiliza somente Loopback, sem acessar dados do operador nem solicitar permissões de firewall.
+
+| Suíte | .NET 10 | .NET 6 | Evidência no ZIP completo |
+| --- | ---: | ---: | --- |
+| Núcleo e serviços | 167 | 167 | `test-evidence/core-1.6.0-<framework>/verification.trx` |
+| Tipografia e animações | 108 | 108 | `test-evidence/typography-1.6.0-<framework>` |
+| Interface real em Avalonia Headless/Skia | 28 | 28 | `test-evidence/ui-headless-1.6.0-<framework>/results.json` |
+| Cliente Java do APK por HTTP real | 26 | 26 | `test-evidence/file-transfer-1.6/<framework>/android-upload-results.json` |
+
+Completam o total 32 verificações do parser Java, registradas em `android-remote/verification/build-1.6.0.json`. Os relatórios adicionais do host complementam a integração e não são somados à contagem.
+
+### Recebimento e operação
+
+Os 29 novos casos de núcleo exercitam autenticação antes da leitura, tamanho conhecido e HTTP chunked, Unicode e nomes Windows, SHA256, publicação atômica, arquivos vazios, nomes repetidos, limites, quota, concorrência, parada do servidor e limpeza após cancelamento/truncamento. Os comandos de projeção continuam disponíveis durante o upload. O servidor despacha cada cliente fora do loop de aceitação e limita o recebimento a um arquivo simultâneo.
+
+A integração compila os arquivos exatos `RemoteUploadClient.java`, `RemoteClient.java` e `RemoteConnection.java` incluídos no APK e envia bytes por `HttpURLConnection` ao servidor C# de produção. Os hosts instanciam `MainWindow` e `ProjectionWindow` reais em Headless/Skia. Foram conferidos cinco arquivos por host, bytes, hashes, eventos e comandos durante um envio lento de 2 MiB. Cancelamento, truncamento, falta de autorização, excesso de tamanho, concorrência e revogação também foram observados. Código e instruções acompanham `test-evidence/file-transfer-1.6`.
+
+A janela de recebidos foi exercitada com os controles reais: abre sem ativar a rede ou alterar a apresentação, lista os arquivos persistidos e habilita ações pelo tipo. Um TXT só foi adicionado à biblioteca após clicar **Importar letras**; uma imagem só alterou a cena após clicar **Usar como fundo**, sendo copiada à mídia local. Os originais recebidos e o documento salvo foram conferidos. A consulta da lista acontece em segundo plano. O primeiro ensaio esperava o temporizador de gravação do backend Headless; a sonda foi ajustada para observar a ação na interface e conferir a persistência após fechar a operação, sem alterar a gravação de produção.
+
+### Navegador e APK
+
+Em uma janela real do DuckDuckGo no Windows, o formulário de produção selecionou e enviou uma fixture de 3.072 bytes. A interface confirmou um recebimento e progresso completo; o servidor conferiu os bytes e SHA256 `4681054725f3613d6500d138adf9f172a518d86937b2690338aa462fd029368b`. **Próxima** e **Tela preta** continuaram funcionando depois do envio. Esse ensaio manual é suplementar às 690 verificações. Relatório, fonte do host e encerramento estão em `test-evidence/file-transfer-1.6/browser`, sem a credencial temporária. O JavaScript também passou na validação de sintaxe.
+
+O APK foi compilado e assinado com o mesmo certificado das versões anteriores, conferindo esquemas v2/v3, alinhamento e manifesto 1.6.0/10600. A revisão estática cobre executor de upload independente, geração de sessão, cancelamento e seleção SAF diferida para `onResume`. **Activity, seletor SAF, toques e instalação em celular físico não foram executados nesta sessão.**
+
+### Atualização e instalador
+
+Dois ensaios isolados atualizaram a versão 1.5 para 1.6 no Windows 11: edição atual com CLR 10 e edição legado forçada somente no instalador de QA, com CLR 6.0.36. Os hashes de DLLs, FFmpeg e APK corresponderam aos payloads, a janela respondeu e a limpeza de runtimes não deixou binários inesperados. Biblioteca, preferências, arquivo recebido e recibo permaneceram idênticos na atualização e após desinstalar as identidades de teste. A instalação original e seus atalhos foram preservados. O QA usa compressão desativada para agilizar os ensaios; o instalador público mantém a compressão normal. Evidências e sondas reproduzíveis: `test-evidence/installer-1.6`. Esses dois ensaios complementam a contagem de 690 verificações.
+
+### Limites mantidos
+
+As provas não confirmam uma rede Wi-Fi específica, celulares físicos ou execução em Windows 7/8/10. Permanecem as exigências x64 e Windows 7 SP1 com KB3063858/equivalente, além dos limites de equipamento da igreja e Holyrics real já documentados. A transferência tem limites reais de 512 MiB por arquivo, 5 GiB de armazenamento e 5.000 arquivos; não executa os arquivos recebidos e não inclui retomada automática. Os resultados seguintes são históricos da 1.5 e anteriores.
 
 ## Resultado 1.5 — runtimes atual e legado
 
