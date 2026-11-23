@@ -50,7 +50,7 @@ public partial class MainWindow : Window
     private bool _blackout, _hideLyrics, _loading = true, _closing, _restoring;
     private object _remoteState = new { title = "Worship Studio", text = "", index=0, count=0, slides=Array.Empty<object>() };
     private CancellationTokenSource? _followCts;
-    private readonly string[] _backgrounds = ["Aurora", "Tunnel", "Particles", "Solid", "Image", "Video"];
+    private readonly string[] _backgrounds = BackgroundCatalog.Choices.Select(choice => choice.Id).ToArray();
     private readonly string[] _transitions = ["Fade", "Slide", "SlideDown", "SlideLeft", "SlideRight", "Zoom", "Pop", "Rotate", "Wipe", "Typewriter", "Words", "Lines", "Cut"];
     private readonly string[] _letterAnimations = ["None", "Float", "Wave", "Pulse", "Breathe", "Sway", "Bounce", "Glow", "Shake"];
     private List<string> _availableFonts = [];
@@ -95,6 +95,7 @@ public partial class MainWindow : Window
         _updateTimer.Tick+=(_,_)=>{if(App.Preferences.AutoCheckUpdates)_=CheckForUpdates(false);};
         _updateTimer.Start();
         ConfigureControls();
+        ConfigureBackgroundCompatibility();
         BindActions();
         BindWorkspaceMenu();
         if(startupUpdate != null) ApplyStartupUpdate(startupUpdate);
@@ -149,7 +150,7 @@ public partial class MainWindow : Window
             if(_loading)return;
             App.Preferences.AutoCheckUpdates=C<CheckBox>("AutoUpdateCheck").IsChecked==true;SavePreferences();
         };
-        C<ComboBox>("BackgroundCombo").ItemsSource = new[] { "Aurora fluida", "Túnel 3D", "Partículas 3D", "Cor sólida", "Imagem local", "Vídeo local" };
+        C<ComboBox>("BackgroundCombo").ItemsSource = BackgroundCatalog.Choices.Select(choice => choice.Name).ToArray();
         C<ComboBox>("TransitionCombo").ItemsSource = new[] { "Dissolver", "Subir", "Descer", "Entrar pela esquerda", "Entrar pela direita", "Aproximar", "Salto com aproximação", "Girar e aparecer", "Revelar da esquerda", "Máquina de escrever", "Palavra por palavra", "Linha por linha", "Corte direto" };
         C<ComboBox>("LetterAnimationCombo").ItemsSource = new[] { "Sem animação contínua", "Flutuar", "Onda nas linhas", "Pulsar", "Respiração", "Balançar", "Saltar", "Brilho pulsante", "Vibração suave" };
         _availableFonts=FontManager.Current.SystemFonts.Select(f=>f.Name).Where(n=>!string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(n=>n,StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -240,6 +241,7 @@ public partial class MainWindow : Window
     {
         var old=_loading;_loading=true;
         var s=_document.Style;
+        s.BackgroundMode=BackgroundCatalog.Normalize(s.BackgroundMode);
         C<ComboBox>("BackgroundCombo").SelectedIndex=Math.Max(0,Array.IndexOf(_backgrounds,s.BackgroundMode));
         C<ComboBox>("TransitionCombo").SelectedIndex=Math.Max(0,Array.IndexOf(_transitions,s.Transition));
         var font=_availableFonts.FirstOrDefault(n=>n.Equals(s.FontFamily,StringComparison.OrdinalIgnoreCase))??_availableFonts.FirstOrDefault(n=>n.Equals("Segoe UI",StringComparison.OrdinalIgnoreCase))??_availableFonts[0];
@@ -255,6 +257,7 @@ public partial class MainWindow : Window
         C<TextBlock>("DimValue").Text=$"{s.Dim:P0}";C<TextBlock>("DurationValue").Text=$"{s.TransitionSeconds:0.0}s";
         C<TextBlock>("MediaLabel").Text=string.IsNullOrEmpty(s.BackgroundPath)?"Efeito procedural · sem arquivo externo":Path.GetFileName(s.BackgroundPath);
         C<Button>("RestartVideoButton").IsEnabled=s.BackgroundMode=="Video";
+        UpdateBackgroundPlaybackStatus();
         UpdateTypographySample();
         _loading=old;
     }
@@ -278,6 +281,7 @@ public partial class MainWindow : Window
         };
         C<TextBlock>("DimValue").Text=$"{_document.Style.Dim:P0}";C<TextBlock>("DurationValue").Text=$"{_document.Style.TransitionSeconds:0.0}s";
         C<Button>("RestartVideoButton").IsEnabled=_document.Style.BackgroundMode=="Video";
+        UpdateBackgroundPlaybackStatus();
         UpdateTypographySample();
         RenderFrames();ScheduleSave();
     }
@@ -402,6 +406,8 @@ public partial class MainWindow : Window
     {
         if(_projection!=null)return;
         _projection=new ProjectionWindow();
+        ApplyVideoCompatibility();
+        _projection.Surface.PlaybackDiagnostic+=diagnostic=>PlaybackDiagnostic("Projeção",diagnostic.Message);
         _projection.NextRequested+=()=>Navigate(1);_projection.PreviousRequested+=()=>Navigate(-1);
         _projection.BlackoutRequested+=ToggleBlackout;_projection.LyricsVisibilityRequested+=ToggleLyrics;
         _projection.Surface.Error+=BackgroundError;

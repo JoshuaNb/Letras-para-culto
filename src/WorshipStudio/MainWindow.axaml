@@ -142,6 +142,7 @@
         <Button x:Name="MediaButton" Content="Escolher imagem ou vídeo…" HorizontalAlignment="Stretch"/>
         <TextBlock x:Name="MediaLabel" Text="Efeito procedural · sem arquivo externo" FontSize="10" Foreground="{DynamicResource WsMuted}" TextWrapping="Wrap" MaxLines="2"/>
         <Button x:Name="RestartVideoButton" Content="Reiniciar vídeo do fundo" HorizontalAlignment="Stretch"/>
+        <TextBlock x:Name="BackgroundPlaybackStatus" Text="Fundos animados locais · sem internet" FontSize="10" Classes="muted" TextWrapping="Wrap"/>
         <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Escurecer fundo"/><TextBlock x:Name="DimValue" Grid.Column="1" Classes="muted"/></Grid><Slider x:Name="DimSlider" Minimum="0" Maximum="1" Value="0.35"/>
         <TextBlock Text="Velocidade do movimento"/><Slider x:Name="SpeedSlider" Minimum="0" Maximum="4" Value="1"/>
         <Grid ColumnDefinitions="*,*"><StackPanel Margin="0,0,5,0" Spacing="5"><TextBlock Text="Cor do efeito" FontSize="10"/><controls:ColorField x:Name="AccentField" Value="#48DCC4" Caption="Cor do efeito"/></StackPanel><StackPanel Grid.Column="1" Margin="5,0,0,0" Spacing="5"><TextBlock Text="Cor do fundo" FontSize="10"/><controls:ColorField x:Name="BackgroundColorField" Value="#08121F" Caption="Cor do fundo"/></StackPanel></Grid>
@@ -219,6 +220,14 @@
        <TextBlock Text="PREFERÊNCIAS" Classes="caption"/>
        <TextBlock Text="Seu espaço de operação" FontSize="19" FontWeight="SemiBold"/>
        <TextBlock Text="Mude o tema no topo da janela. As preferências ficam salvas neste computador e não alteram as cores da projeção." TextWrapping="Wrap" Classes="muted" FontSize="12"/>
+       <Border Height="1" Background="{DynamicResource WsBorder}"/>
+       <TextBlock Text="COMPATIBILIDADE DOS FUNDOS" Classes="caption"/>
+       <CheckBox x:Name="CompatibleVideoCheck" Content="Vídeos em modo econômico"/>
+       <TextBlock Text="Reduz a resolução do vídeo de fundo para computadores mais simples. As letras continuam na resolução da projeção. Aplica imediatamente." TextWrapping="Wrap" Classes="muted" FontSize="11"/>
+       <CheckBox x:Name="SoftwareRenderingCheck" Content="Renderização gráfica por software"/>
+       <TextBlock Text="Use se os efeitos aparecem pretos ou não se movem neste computador. Requer reiniciar o aplicativo. A edição legado já usa software." TextWrapping="Wrap" Classes="muted" FontSize="11"/>
+       <TextBlock x:Name="GraphicsCompatibilityStatus" Text="Vídeos e letras usam a mesma superfície de projeção." TextWrapping="Wrap" Classes="muted" FontSize="11"/>
+       <Button x:Name="RestartGraphicsButton" Content="Reiniciar para aplicar" IsVisible="False" HorizontalAlignment="Stretch"/>
        <Border Height="1" Background="{DynamicResource WsBorder}"/>
        <TextBlock Text="ATUALIZAÇÕES" Classes="caption"/>
        <TextBlock x:Name="VersionLabel" FontWeight="SemiBold"/>

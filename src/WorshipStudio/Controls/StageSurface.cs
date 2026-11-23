@@ -1,56 +1,61 @@
+using System.Runtime.InteropServices;
+using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Threading;
-using LibVLCSharp.Avalonia;
-using LibVLCSharp.Shared;
 using WorshipStudio.Models;
+using WorshipStudio.Services;
 
 namespace WorshipStudio.Controls;
 
-/// <summary>
-/// The real output surface. Native Direct3D video is combined with a transparent
-/// Avalonia overlay because native video windows have their own Win32 airspace.
-/// </summary>
+/// <summary>Video, effects and lyrics share one Avalonia composition, without native HWND/transparent overlays.</summary>
 public sealed class StageSurface : UserControl, IDisposable
 {
-    private readonly Grid _host;
     private readonly StageRenderer _renderer;
-    private readonly StageRenderer _videoOverlay;
-    private readonly DispatcherTimer _videoStartTimer;
-    private VideoView? _videoView;
-    private LibVLC? _vlc;
-    private MediaPlayer? _player;
-    private Media? _media;
+    private readonly Image _videoImage;
+    private readonly FfmpegVideoPlayback _video;
+    private WriteableBitmap? _bitmap;
     private string? _videoPath;
-    private string? _attemptedVideoPath;
     private bool _videoFailed;
-    private bool _initializationFailed;
     private bool _readyForVideo;
     private Window? _ownerWindow;
-    private string? _pendingVideoPath;
-    private long _pendingVideoStarted;
     private bool _disposed;
+    private int _framePosted;
+    private long _playbackId;
+    private VideoPlaybackQuality _quality;
     private StageFrame _frame = new();
 
     public StageRenderer Renderer => _renderer;
-    public bool IsVideoPlaying => _player?.IsPlaying == true;
+    public bool IsVideoPlaying => _video.IsPlaying && _videoImage.IsVisible;
+    public long VideoFramesDecoded => _video.FramesDecoded;
+    public VideoPlaybackDiagnostic? LastPlaybackDiagnostic { get; private set; }
     public event Action<string>? Error;
+    public event Action<VideoPlaybackDiagnostic>? PlaybackDiagnostic;
 
-    public StageSurface()
+    public VideoPlaybackQuality VideoQuality
     {
+        get => _quality;
+        set { if (_quality == value) return; _quality = value; RestartVideo(); }
+    }
+
+    public StageSurface() : this(new FfmpegVideoPlayback()) { }
+
+    public StageSurface(FfmpegVideoPlayback video)
+    {
+        _video = video;
         ClipToBounds = true;
         Background = Brushes.Black;
         _renderer = new StageRenderer();
-        _videoOverlay = new StageRenderer { VideoOverlay = true };
-        _videoStartTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(25), DispatcherPriority.Loaded, (_, _) => StartPendingVideo());
-        _videoStartTimer.Stop();
         _renderer.Error += ReportError;
-        _videoOverlay.Error += ReportError;
-        _host = new Grid { Background = Brushes.Black, ClipToBounds = true };
-        _host.Children.Add(_renderer);
-        Content = _host;
-        SizeChanged += (_, _) => UpdateVideoCrop();
+        _videoImage = new Image { Stretch = Stretch.UniformToFill, IsVisible = false, IsHitTestVisible = false };
+        var host = new Grid { Background = Brushes.Black, ClipToBounds = true };
+        host.Children.Add(_videoImage);
+        host.Children.Add(_renderer);
+        Content = host;
+        _video.FrameAvailable += OnFrameAvailable;
+        _video.Diagnostic += OnPlaybackDiagnostic;
         AttachedToVisualTree += (_, _) =>
         {
             _ownerWindow = TopLevel.GetTopLevel(this) as Window;
@@ -63,16 +68,16 @@ public sealed class StageSurface : UserControl, IDisposable
             if (_ownerWindow != null) _ownerWindow.Opened -= OnOwnerOpened;
             _ownerWindow = null;
             _readyForVideo = false;
-            ClearPendingVideo();
-            ShowFallback();
-            if (!_disposed && _player?.IsPlaying == true) _player.SetPause(true);
+            StopVideo();
+        };
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == IsVisibleProperty && !_disposed) SetFrame(_frame);
         };
     }
 
     private void OnOwnerOpened(object? sender, EventArgs e)
     {
-        // Persisted video settings may be applied while MainWindow is still being
-        // constructed. Native media requires the real, visible Win32 host first.
         _readyForVideo = true;
         Dispatcher.UIThread.Post(() => { if (!_disposed && _readyForVideo) SetFrame(_frame); }, DispatcherPriority.Loaded);
     }
@@ -82,224 +87,123 @@ public sealed class StageSurface : UserControl, IDisposable
         if (_disposed) return;
         _frame = frame;
         _renderer.SetFrame(frame);
-        _videoOverlay.SetFrame(frame);
-        var video = frame.Style.BackgroundMode == "Video" && !string.IsNullOrWhiteSpace(frame.Style.BackgroundPath);
-        if (video && !frame.Blackout)
+        var path = frame.Style.BackgroundPath;
+        var shouldPlay = frame.Style.BackgroundMode == "Video" && !string.IsNullOrWhiteSpace(path) &&
+            !frame.Blackout && _readyForVideo && IsEffectivelyVisible;
+        if (!shouldPlay)
         {
-            var path = frame.Style.BackgroundPath!;
-            if (!string.Equals(_attemptedVideoPath, path, StringComparison.OrdinalIgnoreCase))
-            {
-                _attemptedVideoPath = path;
-                _videoFailed = false;
-                _initializationFailed = false;
-            }
-            if (!_videoFailed && !File.Exists(path)) FailVideo("Arquivo de vídeo não encontrado. Escolha novamente o fundo ou restaure a mídia local.");
-            if (!_videoFailed && (!_readyForVideo || !IsEffectivelyVisible))
-            {
-                ShowFallback();
-                return;
-            }
-            if (!_videoFailed && EnsureVideo())
-            {
-                // NativeControlHost creates/attaches its HWND after becoming visible.
-                // Calling libvlc_media_player_play before that creates a separate VLC window.
-                _videoView!.IsVisible = true;
-                if (!string.Equals(_videoPath, path, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (HasVideoHost()) PlayVideo(path);
-                    else QueueVideoStart(path);
-                }
-                if (!_videoFailed)
-                {
-                    _renderer.IsVisible = false;
-                    if (_player?.State == VLCState.Paused) _player.SetPause(false);
-                }
-            }
-            if (_videoFailed) ShowFallback();
-        }
-        else
-        {
-            ClearPendingVideo();
-            ShowFallback();
-            // Blackout never depends on the native transparent-window overlay:
-            // hide the native video HWND and show the opaque black canvas.
-            if (!video)
-            {
-                if (_player?.IsPlaying == true) _player.SetPause(true);
-                _videoPath = null;
-                _attemptedVideoPath = null;
-                _videoFailed = false;
-                _initializationFailed = false;
-            }
-        }
-    }
-
-    private bool EnsureVideo()
-    {
-        if (_videoView != null) return true;
-        if (_initializationFailed) return false;
-        try
-        {
-            Core.Initialize();
-            _vlc = new LibVLC("--quiet", "--no-video-title-show", "--avcodec-hw=any");
-            _player = new MediaPlayer(_vlc) { Mute = true, EnableMouseInput = false, EnableKeyInput = false };
-            _player.Playing += (_, _) => Dispatcher.UIThread.Post(UpdateVideoCrop);
-            _player.EncounteredError += (_, _) => Dispatcher.UIThread.Post(() => FailVideo("O vídeo não pôde ser reproduzido. Verifique o arquivo e o formato."));
-            _player.EndReached += (_, _) => Dispatcher.UIThread.Post(() =>
-            {
-                if (!_disposed && !_videoFailed && _frame.Style.BackgroundMode == "Video" && _media != null)
-                    _player?.Play(_media);
-            });
-            _videoView = new VideoView
-            {
-                MediaPlayer = _player,
-                Content = _videoOverlay,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch,
-                IsVisible = false
-            };
-            // Native video is the bottom layer. Its Content owns the transparent top layer.
-            _host.Children.Insert(0, _videoView);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _initializationFailed = true;
-            if (_videoView != null)
-            {
-                _videoView.MediaPlayer = null;
-                _videoView.Content = null;
-                _host.Children.Remove(_videoView);
-                _videoView = null;
-            }
-            _player?.Dispose();
-            _player = null;
-            _vlc?.Dispose();
-            _vlc = null;
-            FailVideo("Falha ao iniciar vídeo: " + ex.Message);
-            return false;
-        }
-    }
-
-    private void PlayVideo(string path)
-    {
-        if (_vlc == null || _player == null) return;
-        if (!HasVideoHost()) { QueueVideoStart(path); return; }
-        ClearPendingVideo();
-        try
-        {
-            if (!File.Exists(path)) throw new FileNotFoundException("Arquivo de vídeo não encontrado.", path);
-            _player.Stop();
-            _media?.Dispose();
-            _media = new Media(_vlc, new Uri(Path.GetFullPath(path)));
-            _media.AddOption(":input-repeat=65535");
-            _media.AddOption(":no-audio");
-            _videoPath = path;
-            if (!_player.Play(_media)) throw new InvalidOperationException("O mecanismo de vídeo recusou a reprodução.");
-        }
-        catch (Exception ex)
-        {
-            _videoPath = null;
-            FailVideo("Não foi possível abrir o vídeo: " + ex.Message);
-        }
-    }
-
-    public void RestartVideo()
-    {
-        if (_disposed || _frame.Style.BackgroundMode != "Video") return;
-        _attemptedVideoPath = null;
-        _videoPath = null;
-        _videoFailed = false;
-        _initializationFailed = false;
-        SetFrame(_frame);
-    }
-
-    private bool HasVideoHost() => _player != null && (!OperatingSystem.IsWindows() || _player.Hwnd != IntPtr.Zero);
-
-    private void QueueVideoStart(string path)
-    {
-        if (!string.Equals(path, _pendingVideoPath, StringComparison.OrdinalIgnoreCase))
-        {
-            _pendingVideoPath = path;
-            _pendingVideoStarted = Environment.TickCount64;
-        }
-        _videoStartTimer.Start();
-    }
-
-    private void StartPendingVideo()
-    {
-        if (_disposed || !_readyForVideo || !IsEffectivelyVisible || _frame.Blackout ||
-            _frame.Style.BackgroundMode != "Video" || _videoFailed || _pendingVideoPath == null)
-        {
-            ClearPendingVideo();
+            StopVideo();
             return;
         }
-        if (HasVideoHost())
+        if (!string.Equals(_videoPath, path, StringComparison.OrdinalIgnoreCase))
         {
-            var path = _pendingVideoPath;
-            PlayVideo(path);
+            StopVideo();
+            _videoPath = path;
+            _videoFailed = false;
+            _playbackId = _video.Play(path!, _quality);
         }
-        else if (Environment.TickCount64 - _pendingVideoStarted > 5000)
-        {
-            ClearPendingVideo();
-            FailVideo("Não foi possível preparar a janela de vídeo. Reabra a projeção ou escolha novamente o fundo.");
-        }
+        if (_videoFailed) ShowFallback();
     }
 
-    private void ClearPendingVideo()
+    private void OnFrameAvailable()
     {
-        _videoStartTimer.Stop();
-        _pendingVideoPath = null;
+        if (_disposed || Interlocked.Exchange(ref _framePosted, 1) != 0) return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            Interlocked.Exchange(ref _framePosted, 0);
+            if (_disposed) return;
+            using var frame = _video.TakeLatestFrame();
+            if (frame == null || _frame.Blackout || _frame.Style.BackgroundMode != "Video" || !_readyForVideo || !IsEffectivelyVisible) return;
+            try
+            {
+                if (_bitmap == null || _bitmap.PixelSize.Width != frame.Width || _bitmap.PixelSize.Height != frame.Height)
+                {
+                    _videoImage.Source = null;
+                    _bitmap?.Dispose();
+                    _bitmap = new WriteableBitmap(new PixelSize(frame.Width, frame.Height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
+                }
+                using (var target = _bitmap.Lock())
+                {
+                    if (target.RowBytes == frame.Stride)
+                        Marshal.Copy(frame.Buffer, 0, target.Address, frame.Stride * frame.Height);
+                    else
+                        for (var row = 0; row < frame.Height; row++)
+                            Marshal.Copy(frame.Buffer, row * frame.Stride, IntPtr.Add(target.Address, row * target.RowBytes), frame.Stride);
+                }
+                _videoImage.Source = _bitmap;
+                _videoImage.IsVisible = true;
+                _renderer.VideoOverlay = true;
+                _renderer.InvalidateVisual();
+                _videoImage.InvalidateVisual();
+            }
+            catch (Exception ex)
+            {
+                _video.Stop();
+                _videoFailed = true;
+                ShowFallback();
+                ReportError("Falha ao apresentar o quadro do vídeo. As letras continuam disponíveis. " + ex.Message);
+            }
+        }, DispatcherPriority.Render);
+    }
+
+    private void OnPlaybackDiagnostic(VideoPlaybackDiagnostic diagnostic)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (_disposed || _videoPath == null || diagnostic.PlaybackId != _playbackId) return;
+            LastPlaybackDiagnostic = diagnostic;
+            if (diagnostic.State is VideoPlaybackState.Failed or VideoPlaybackState.Recovering)
+            {
+                _videoFailed = diagnostic.State == VideoPlaybackState.Failed;
+                ShowFallback();
+            }
+            PlaybackDiagnostic?.Invoke(diagnostic);
+            if (diagnostic.State == VideoPlaybackState.Failed) ReportError(diagnostic.Message);
+        });
+    }
+
+    private void StopVideo()
+    {
+        var hadVideo = _videoPath != null;
+        _video.Stop();
+        _playbackId = 0;
+        _videoPath = null;
+        _videoFailed = false;
+        ShowFallback();
+        if (hadVideo && !_disposed)
+        {
+            LastPlaybackDiagnostic = new(VideoPlaybackState.Stopped, "Vídeo interrompido; projeção preservada.", _quality);
+            PlaybackDiagnostic?.Invoke(LastPlaybackDiagnostic);
+        }
     }
 
     private void ShowFallback()
     {
-        if (_videoView != null) _videoView.IsVisible = false;
-        _renderer.IsVisible = true;
+        _videoImage.IsVisible = false;
+        _renderer.VideoOverlay = false;
+        _renderer.InvalidateVisual();
     }
 
-    private void FailVideo(string message)
+    public void RestartVideo()
     {
-        if (_disposed || _videoFailed) return;
-        _videoFailed = true;
-        ClearPendingVideo();
-        ShowFallback();
-        ReportError(message);
+        if (_disposed) return;
+        StopVideo();
+        SetFrame(_frame);
     }
 
-    public void ReplayTransition()
-    {
-        _renderer.ReplayTransition();
-        _videoOverlay.ReplayTransition();
-    }
-
-    private void UpdateVideoCrop()
-    {
-        if (_player == null || _disposed || Bounds.Width < 1 || Bounds.Height < 1) return;
-        // Match the cover/crop behavior used by image backgrounds and MP4 export.
-        _player.CropGeometry = $"{(int)Math.Round(Bounds.Width)}:{(int)Math.Round(Bounds.Height)}";
-        _player.Scale = 0;
-    }
-
+    public void ReplayTransition() => _renderer.ReplayTransition();
     private void ReportError(string message) => Error?.Invoke(message);
 
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
-        ClearPendingVideo();
-        if (_videoView != null)
-        {
-            _videoView.IsVisible = false;
-            _videoView.MediaPlayer = null;
-            _videoView.Content = null;
-            _host.Children.Remove(_videoView);
-        }
-        _player?.Stop();
-        _media?.Dispose();
-        _player?.Dispose();
-        _vlc?.Dispose();
+        if (_ownerWindow != null) _ownerWindow.Opened -= OnOwnerOpened;
+        _video.FrameAvailable -= OnFrameAvailable;
+        _video.Diagnostic -= OnPlaybackDiagnostic;
+        _video.Dispose();
+        _videoImage.Source = null;
+        _bitmap?.Dispose(); _bitmap = null;
         _renderer.Dispose();
-        _videoOverlay.Dispose();
     }
 }

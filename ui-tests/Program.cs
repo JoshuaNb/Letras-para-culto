@@ -183,6 +183,42 @@ try
         Require(C<WrapPanel>("SlidesPanel").Children.Count == 3 && preview.Renderer.Frame.Text == initialText, "Limpar a busca não recuperou a biblioteca e suas estrofes.");
     });
 
+    Check("Preferência de vídeo econômico aplica nas superfícies e preserva letras", () =>
+    {
+        C<TabControl>("InspectorTabs").SelectedIndex=2;Pump();
+        var economy=C<CheckBox>("CompatibleVideoCheck");economy.BringIntoView();Pump();
+        if(WindowsCompatibility.IsLegacyRuntime)
+        {
+            Require(economy.IsChecked==true&&!economy.IsEnabled&&preview.VideoQuality==VideoPlaybackQuality.Compatible,"Edição legado não fixou a qualidade econômica.");
+        }
+        else
+        {
+            var original=preview.Renderer.Frame.Style with{};
+            Click(economy);
+            Require(StudioPreferences.Load(isolatedData).CompatibleVideoPlayback&&preview.VideoQuality==VideoPlaybackQuality.Compatible&&live.VideoQuality==VideoPlaybackQuality.Compatible,"A preferência não chegou às superfícies.");
+            Require(preview.Renderer.Frame.Style==original&&preview.Renderer.Frame.Text==initialText,"A qualidade do vídeo mudou a cena ou as letras.");
+            Click(economy);
+            Require(!StudioPreferences.Load(isolatedData).CompatibleVideoPlayback&&preview.VideoQuality==VideoPlaybackQuality.Auto,"A opção econômica não foi revertida.");
+        }
+        C<TabControl>("InspectorTabs").SelectedIndex=0;Pump();
+    });
+
+    Check("Compatibilidade gráfica persiste e pede reinício sem fechar a operação", () =>
+    {
+        C<TabControl>("InspectorTabs").SelectedIndex=2;Pump();
+        var software=C<CheckBox>("SoftwareRenderingCheck");software.BringIntoView();Pump();
+        if(WindowsCompatibility.IsLegacyRuntime)
+            Require(software.IsChecked==true&&!software.IsEnabled,"A edição legado não informou o modo por software.");
+        else
+        {
+            Click(software);
+            Require(StudioPreferences.Load(isolatedData).ForceSoftwareRendering&&C<Button>("RestartGraphicsButton").IsVisible&&main.IsVisible,"A escolha gráfica não foi salva ou fechou o operador sem ação.");
+            Click(software);
+            Require(!StudioPreferences.Load(isolatedData).ForceSoftwareRendering&&!C<Button>("RestartGraphicsButton").IsVisible,"Voltar ao modo automático não removeu o reinício pendente.");
+        }
+        C<TabControl>("InspectorTabs").SelectedIndex=0;Pump();
+    });
+
     Check("Controle de busca automática pode ser desligado e persiste sem consultar a rede", () =>
     {
         C<TabControl>("InspectorTabs").SelectedIndex = 2; Pump();
@@ -204,6 +240,26 @@ try
         Require(!ReferenceEquals(projection.Surface, preview) && !ReferenceEquals(projection.Surface, live), "A saída reutilizou uma superfície do operador.");
         Require(projection.Surface.Renderer.Frame.Text == initialText && live.Renderer.Frame.Text == initialText, "Saída e retorno não receberam a letra enviada.");
         Require(!live.Renderer.Frame.Blackout && C<TextBlock>("LiveLabel").Text == "AO VIVO", "O retorno não saiu da tela preta.");
+    });
+
+    Check("Oito novos fundos chegam à prévia, retorno e janela independente com as letras", () =>
+    {
+        var combo=C<ComboBox>("BackgroundCombo");var oldIndex=combo.SelectedIndex;
+        var oldSpeed=C<Slider>("SpeedSlider").Value;
+        var choices=BackgroundCatalog.Choices;
+        Require(combo.ItemCount==14&&choices.Count(c=>c.IsProcedural)==11,"O catálogo de fundos não foi composto.");
+        Require(projection!.Surface.VideoQuality==preview.VideoQuality,"A projeção não herdou a qualidade de vídeo.");
+        var added=choices.Where(c=>c.IsProcedural&&c.Id is not("Aurora" or "Tunnel" or "Particles")).ToArray();
+        Require(added.Length==8,"Os novos fundos não chegaram ao catálogo.");
+        C<Slider>("SpeedSlider").Value=1;
+        foreach(var choice in added)
+        {
+            combo.SelectedIndex=choices.ToList().IndexOf(choice);Pump();
+            Require(preview.Renderer.Frame.Style.BackgroundMode==choice.Id&&live.Renderer.Frame.Style.BackgroundMode==choice.Id&&projection.Surface.Renderer.Frame.Style.BackgroundMode==choice.Id,"Um fundo não alcançou as três superfícies: "+choice.Name);
+            Require(live.Renderer.Frame.Text==initialText&&projection.Surface.Renderer.Frame.Text==initialText,"Mudar o fundo interrompeu as letras.");
+            if(choice.Id=="Galaxy")Capture(main,"background-galaxy-live");
+        }
+        combo.SelectedIndex=oldIndex;C<Slider>("SpeedSlider").Value=oldSpeed;Pump();
     });
 
     Check("Trilha do roteiro prepara outro louvor sem interromper a projeção", () =>

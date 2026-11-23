@@ -2,6 +2,18 @@
 
 O projeto é publicado como **Letras para culto**. O aplicativo e os arquivos de PC mantêm o nome **Worship Studio**, preservando a atualização das instalações existentes.
 
+## 1.8.0 — Fundos no compositor e novos cenários
+
+- Reprodução dos vídeos locais substituída por decodificação em CPU no FFmpeg empacotado, em processo isolado. Quadros BGRA e letras são compostos na mesma superfície, sem VideoView/overlay nativo do LibVLC e sem decodificação de vídeo por hardware.
+- Aurora e letras permanecem visíveis até o primeiro quadro completo. Prazos para abertura e entrega de quadros evitam espera indefinida; uma falha no modo automático dispara uma tentativa em modo econômico, seguida de diagnóstico e fundo de segurança se a recuperação falhar.
+- Vídeos continuam locais, em loop e sem som. Modo automático usa 1280×720 a 30 quadros/s; **Vídeos em modo econômico** usa 854×480 a 24 quadros/s, aplica imediatamente e é o padrão da edição legado. As letras mantêm a resolução da projeção.
+- Nova preferência **Renderização gráfica por software**, com reinício confirmado para aplicar, e argumento de recuperação `--software-rendering`. A edição atual conserva GPU para interface/letras quando disponível; a edição legado já usa software.
+- Oito fundos procedurais novos: Ondas de graça, Raios de luz, Galáxia em movimento, Bokeh suave, Horizonte 3D, Oceano sereno, Fitas de adoração e Prismas de luz. O catálogo reúne 14 escolhas: 11 procedurais, cor sólida, imagem e vídeo.
+- Catálogo normaliza identificadores e nomes antigos em português; modo desconhecido usa Aurora. Imagem ausente ou corrompida exibe Aurora e letras com aviso. Mídia de uma biblioteca copiada é localizada na pasta `media` atual pelo nome do arquivo.
+- APK 1.8 assinado com a mesma chave, com fontes Java e DEX idênticos à 1.7. Mantidos abertura assistida, menus, quatro temas, controle remoto, Holyrics e transferência de arquivos.
+
+[Notas 1.8](docs/releases/v1.8.0.md) · [Guia de operação](README.pt-BR.md) · [Resultados e limites](VERIFICACAO.md). A falha no outro computador não foi reproduzida nessa GPU; os testes locais não comprovam correção em qualquer equipamento.
+
 ## 1.7.0 — Espaço de operação e abertura assistida
 
 - Reorganizada a interface desktop a partir da referência DaVinci Resolve: superfícies em carvão, painéis com divisórias, retorno ao vivo em destaque e prévia independente para preparar a próxima estrofe.

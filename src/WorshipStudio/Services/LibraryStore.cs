@@ -114,6 +114,15 @@ public sealed class LibraryStore
             if (!resolved.StartsWith(DirectoryPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Caminho da mídia fora da biblioteca.");
             document.Style.BackgroundPath = resolved;
         }
+        else if (!string.IsNullOrWhiteSpace(document.Style.BackgroundPath))
+        {
+            var original = document.Style.BackgroundPath;
+            if (string.Equals(Path.GetFileName(Path.GetDirectoryName(original)), "media", StringComparison.OrdinalIgnoreCase))
+            {
+                var local = Path.Combine(DirectoryPath, "media", Path.GetFileName(original));
+                if (File.Exists(local)) document.Style.BackgroundPath = local;
+            }
+        }
     }
     public static void Validate(StudioDocument document)
     {
@@ -124,6 +133,7 @@ public sealed class LibraryStore
         foreach (var song in document.Songs) song.Artist ??= "";
         document.Setlist.RemoveAll(id=>document.Songs.All(s=>s.Id!=id));
         var style = document.Style;
+        style.BackgroundMode = BackgroundCatalog.Normalize(style.BackgroundMode);
         style.FontSize = double.IsFinite(style.FontSize) ? Math.Clamp(style.FontSize, 24, 140) : 64;
         style.TransitionSeconds = double.IsFinite(style.TransitionSeconds) ? Math.Clamp(style.TransitionSeconds, 0, 3) : .6;
         style.MotionSpeed = double.IsFinite(style.MotionSpeed) ? Math.Clamp(style.MotionSpeed, 0, 4) : 1;

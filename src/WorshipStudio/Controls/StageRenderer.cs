@@ -24,6 +24,7 @@ public sealed class StageRenderer : Control, IDisposable
     private string _text = "";
     private double _changedAt;
     private string? _imagePath;
+    private bool _imageRequested;
     private Bitmap? _image;
     private double? _fixedTime;
     private double? _fixedTransition;
@@ -76,7 +77,8 @@ public sealed class StageRenderer : Control, IDisposable
             _changedAt = _clock.Elapsed.TotalSeconds;
         }
         _frame = frame;
-        LoadImage(frame.Style.BackgroundMode == "Image" ? frame.Style.BackgroundPath : null);
+        var imageRequested=BackgroundCatalog.Normalize(frame.Style.BackgroundMode)=="Image";
+        LoadImage(imageRequested?frame.Style.BackgroundPath:null,imageRequested);
         InvalidateVisual();
     }
 
@@ -89,14 +91,20 @@ public sealed class StageRenderer : Control, IDisposable
         InvalidateVisual();
     }
 
-    private void LoadImage(string? path)
+    private void LoadImage(string? path,bool requested)
     {
-        if (_imagePath == path) return;
+        if (_imagePath == path&&_imageRequested==requested) return;
         _imagePath = path;
+        _imageRequested=requested;
         _image?.Dispose();
         _image = null;
         MediaError = null;
-        if (string.IsNullOrWhiteSpace(path)) return;
+        if(!requested)return;
+        if(string.IsNullOrWhiteSpace(path))
+        {
+            MediaError="Nenhuma imagem local foi escolhida. O fundo Aurora será exibido até escolher uma imagem.";
+            Error?.Invoke(MediaError);return;
+        }
         try
         {
             // Decode from the closed stream so removable media are not kept locked.
@@ -105,7 +113,7 @@ public sealed class StageRenderer : Control, IDisposable
         }
         catch (Exception ex)
         {
-            MediaError = "Não foi possível abrir a imagem: " + ex.Message;
+            MediaError = "Não foi possível abrir a imagem: " + ex.Message+" O fundo Aurora será exibido.";
             Error?.Invoke(MediaError);
         }
     }
@@ -156,10 +164,12 @@ public sealed class StageRenderer : Control, IDisposable
         if (!VideoOverlay)
         {
             context.FillRectangle(Brush(style.BackgroundColor, "#071320"), rect);
-            switch (style.BackgroundMode)
+            var backgroundMode=BackgroundCatalog.Normalize(style.BackgroundMode);
+            switch (backgroundMode)
             {
                 case "Image":
-                    DrawImage(context, rect);
+                    if(_image!=null)DrawImage(context,rect);
+                    else DrawAurora(context,rect,style,time,audio);
                     break;
                 case "Tunnel":
                     DrawTunnel(context, rect, style, time, audio);
@@ -169,6 +179,10 @@ public sealed class StageRenderer : Control, IDisposable
                     break;
                 case "Aurora":
                     DrawAurora(context, rect, style, time, audio);
+                    break;
+                case "GraceWaves":case "LightRays":case "Galaxy":case "Bokeh":
+                case "WireLandscape":case "Ocean":case "Ribbons":case "Prism":
+                    ProceduralBackgroundRenderer.Draw(context,rect,style,backgroundMode,time,audio);
                     break;
                 case "Video":
                     // Native GPU video is rendered underneath by ProjectionWindow.

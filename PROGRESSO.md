@@ -1,10 +1,16 @@
-# Versão atual: 1.7.0
+# Versão atual: 1.8.0
 
 Pedido autorizado: futuras atualizações publicadas no GitHub público JoshuaNb/Letras-para-culto; busca automática e instalação pelo aplicativo; reorganização inspirada em estações de edição como DaVinci Resolve; temas branco, escuro, cinza e amarelo pastel.
 
 O aplicativo continua funcionando sem internet. A consulta opcional ao GitHub ocorre em segundo plano; instalar requer ação do operador e encerra a projeção somente após confirmação no aplicativo.
 
-Implementação 1.7.0 concluída: interface inspirada na referência DaVinci Resolve, com menus reais, retorno maior, prévia independente, inspetor e faixas reais de estrofes/roteiro. A janela de abertura carrega as letras locais em background e consulta atualizações em paralelo, com seis segundos de teto e botão para dispensar a rede. Respeita a preferência salva e não instala automaticamente. A biblioteca corrompida permanece protegida contra gravação.
+Implementação 1.8.0 concluída: StageSurface deixou VideoView/HWND transparente e decodificação de vídeo por hardware. FFmpeg local isolado entrega BGRA ao mesmo compositor das letras, com fallback Aurora, watchdog e tentativa econômica limitada. Preferências de vídeo econômico e software gráfico, reinício confirmado e argumento `--software-rendering`. Catálogo com oito fundos novos, aliases/nomes antigos e modo desconhecido recuperado por Aurora; imagens inválidas recebem fundo de segurança e biblioteca copiada resolve mídia local.
+
+Validação 1.8: 842 verificações aprovadas, zero falhas finais: 211 núcleo, 130 visuais, 38 interface e 26 transporte Java/HTTP por runtime, mais 32 Java. Outros 18 cenários nativos passaram em software atual/legado e GPU D3D11 atual, com vídeo e letras nos mesmos pixels, blackout, recuperação e quadros animados. Não há reprodução confirmada na outra GPU do usuário. Evidências e limites: `VERIFICACAO.md`, `test-evidence/video-1.8` e demais relatórios no ZIP completo. APK 1.8 assinado com a mesma chave, Java/DEX da 1.7. Original do operador preservado durante QA isolado.
+
+Esclarecimento do usuário: falham os efeitos internos atrás das letras no Windows 10. Esse equipamento não foi acessado; aliases/fallback e opção gráfica por software cobrem esse caminho, sem atribuir a falha dos efeitos ao antigo reprodutor de vídeo. QA final 1.7→1.8 passou nas edições atual e legado, com quatro aberturas corretas, hashes dos payloads e dados preservados na atualização e após desinstalar as identidades de teste. Relatórios: `test-evidence/installer-1.8`.
+
+Histórico 1.7: interface inspirada na referência DaVinci Resolve, com menus reais, retorno maior, prévia independente, inspetor e faixas reais de estrofes/roteiro. A janela de abertura carrega as letras locais em background e consulta atualizações em paralelo, com seis segundos de teto e botão para dispensar a rede. Respeita a preferência salva e não instala automaticamente. A biblioteca corrompida permanece protegida contra gravação.
 
 Validação 1.7: 734 verificações automáticas aprovadas, zero falhas finais: 182 de núcleo, 108 visuais, 35 de interface e 26 de transporte Java/HTTP por runtime, mais 32 Java. A operação nativa também abriu com busca automática e GPU no Windows 11; o menu avançou a projeção independente mantendo a prévia. O APK 1.7 é assinado com a mesma chave e mantém Java/DEX da 1.6. Veja `VERIFICACAO.md` e os relatórios no ZIP completo. Celular físico, Wi-Fi e Windows antigos permanecem com limites explícitos.
 

@@ -1,10 +1,10 @@
-# Worship Studio 1.7.0
+# Worship Studio 1.8.0
 
 Aplicativo desktop em C#/Avalonia UI para preparar e projetar letras de louvores. Edição atual .NET 10 e edição legado .NET 6 para Windows 7 SP1, 8, 8.1, 10 e 11 x64. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
 
 ## Instalação e primeira projeção
 
-1. Execute `WorshipStudio-Setup-1.7.0.exe` no Windows x64. O instalador escolhe a edição adequada e inclui .NET, LibVLC e FFmpeg. A instalação é por usuário e preserva a biblioteca. No Windows 7, instale o SP1 e a KB3063858 ou atualização equivalente antes de instalar o programa.
+1. Execute `WorshipStudio-Setup-1.8.0.exe` no Windows x64. O instalador escolhe a edição adequada e inclui .NET, LibVLC e FFmpeg. A instalação é por usuário e preserva a biblioteca. No Windows 7, instale o SP1 e a KB3063858 ou atualização equivalente antes de instalar o programa.
 2. Para dois monitores, escolha **Estender estes vídeos** nas configurações de vídeo do Windows. Ligue o projetor antes de iniciar.
 3. Abra Worship Studio. Na aba **Cena**, escolha o monitor de saída.
 4. Clique **Abrir projeção**. A janela de operação permanece independente da projeção. A janela de saída pode funcionar no mesmo monitor quando não há segunda tela.
@@ -13,7 +13,19 @@ Aplicativo desktop em C#/Avalonia UI para preparar e projetar letras de louvores
 
 O louvor inicial é um texto original curto para conferir a operação. Importe ou cadastre a biblioteca da igreja.
 
-## Novidades da versão 1.7
+## Novidades da versão 1.8
+
+Os vídeos de fundo passam a ser decodificados em CPU pelo FFmpeg incluído, em processo isolado, e desenhados junto das letras no compositor da projeção. A reprodução deixa de usar VideoView/overlay nativo do LibVLC e decodificação de vídeo por hardware. O vídeo continua local, em loop e sem som; o pacote mantém as bibliotecas e licenças LibVLC por compatibilidade da distribuição.
+
+Aurora e letras ficam visíveis até o primeiro quadro. Se a abertura ou a entrega de quadros falhar no modo automático, o programa faz uma tentativa em modo econômico. Uma falha definitiva apresenta um diagnóstico e mantém o fundo de segurança com as letras. Imagem ausente ou corrompida usa Aurora e mantém a letra, com aviso. Nomes antigos de fundos são normalizados; um modo desconhecido usa Aurora. A mídia de uma biblioteca copiada é procurada na pasta `media` atual pelo nome do arquivo.
+
+O catálogo ganha Ondas de graça, Raios de luz, Galáxia em movimento, Bokeh suave, Horizonte 3D, Oceano sereno, Fitas de adoração e Prismas de luz. São 11 fundos procedurais e as opções cor sólida, imagem e vídeo, totalizando 14 escolhas.
+
+Em **App**, **Vídeos em modo econômico** aplica imediatamente a reprodução 854×480 a 24 quadros/s. O modo automático usa 1280×720 a 30 quadros/s; o econômico é o padrão da edição legado. A resolução das letras não diminui. **Renderização gráfica por software** altera a interface/letras após reiniciar com confirmação; `WorshipStudio.exe --software-rendering` permite abrir diretamente nesse modo. Consulte os controles e os limites abaixo antes de usar no culto.
+
+O APK 1.8 mantém o código Java e o DEX da 1.7 e a mesma assinatura. A falha gráfica relatada no outro computador não foi reproduzida na GPU daquele equipamento; os testes locais não comprovam correção em qualquer computador.
+
+## Recursos da versão 1.7
 
 O espaço de operação foi reorganizado a partir da referência DaVinci Resolve: superfícies em carvão, biblioteca à esquerda, retorno ao vivo maior, prévia independente e inspetor à direita. A faixa azul mostra as estrofes reais e a faixa âmbar representa o roteiro do culto. A seleção continua preparando a prévia; **Projetar estrofe** envia ao vivo.
 
@@ -68,9 +80,23 @@ O campo de busca procura título, autoria e letra. **Adicionar ao roteiro** mont
 
 A aba **Cena** contém os controles reais do renderizador: fundo procedural, imagem/vídeo local, velocidade, escurecimento, cores, fonte, negrito, tamanho, posição e animações das letras. As alterações atualizam a prévia e a projeção em tempo real. **Reiniciar vídeo do fundo** reinicia a mídia nas superfícies de prévia e projeção. **Salvar cena** e **Carregar** permitem reutilizar os parâmetros.
 
-Os efeitos procedurais usam geometria em perspectiva e animação contínua. O editor permite ajustar as entradas das letras por unidade e percorrer sua prévia no tempo. Não possui edição livre de keyframes nem importação de modelos 3D. Imagens e vídeos escolhidos são copiados para a pasta de mídia da biblioteca. A reprodução de fundo usa LibVLC local, em loop e sem som, para preservar o áudio do culto.
+Os fundos procedurais incluem geometria em perspectiva e animação contínua. O editor permite ajustar as entradas das letras por unidade e percorrer sua prévia no tempo. Não possui edição livre de keyframes nem importação de modelos 3D. Imagens e vídeos escolhidos são copiados para a pasta de mídia da biblioteca. A reprodução de fundo usa o FFmpeg local em CPU, em loop e sem som, para preservar o áudio do culto. Os quadros e as letras compartilham a mesma superfície de desenho.
 
-O Avalonia usa Skia/ANGLE no Windows com aceleração gráfica e fallback de software. O LibVLC solicita decodificação por hardware quando disponível. O uso efetivo da GPU depende do driver e do formato da mídia. A versão não inclui um benchmark certificado no Ryzen 5 5600G/RX 6600.
+Na edição atual, o Avalonia usa Skia/ANGLE para interface e letras com aceleração gráfica e fallback de software. A edição legado já usa software. O uso efetivo da GPU depende do driver; a decodificação de vídeo desta versão ocorre em CPU. Não há benchmark certificado no Ryzen 5 5600G/RX 6600.
+
+### Escolher fundos e recuperar a mídia
+
+Em **Cena → Fundo**, escolha um dos 11 procedurais: Aurora fluida, Túnel 3D, Partículas 3D, Ondas de graça, Raios de luz, Galáxia em movimento, Bokeh suave, Horizonte 3D, Oceano sereno, Fitas de adoração ou Prismas de luz. Cor sólida, Imagem local e Vídeo local completam o catálogo. Velocidade, escurecimento e cor do efeito continuam disponíveis.
+
+Identificadores e nomes antigos em português são reconhecidos. Se uma cena informar um modo desconhecido, a projeção usa Aurora em vez de mostrar apenas a base e as letras. Imagem ausente ou inválida também conserva Aurora e letras com aviso. Ao mover uma biblioteca manualmente, copie sua pasta `media`; a versão procura nessa pasta atual os arquivos referenciados pelo nome.
+
+### Vídeo econômico e renderização por software
+
+Abra **App → Compatibilidade dos fundos**. **Vídeos em modo econômico** muda imediatamente o vídeo para 854×480 a 24 quadros/s; desmarcada, a reprodução usa 1280×720 a 30 quadros/s. Na edição legado o modo econômico é usado por padrão. Essas dimensões são do vídeo de fundo; as letras continuam na resolução da saída.
+
+Se os efeitos aparecerem pretos ou pararem de se mover, marque **Renderização gráfica por software**. Clique **Reiniciar para aplicar** e confirme quando puder interromper a operação. A preferência fica salva neste computador; a edição legado já renderiza por software. Para iniciar nesse modo sem abrir as preferências, execute `WorshipStudio.exe --software-rendering`.
+
+A abertura do vídeo e a chegada de cada quadro têm prazos limitados. Até chegar o primeiro quadro, o fundo de segurança e a letra continuam visíveis. Uma falha no modo automático faz uma tentativa em modo econômico. Se o vídeo já estiver no econômico ou a recuperação também falhar, o programa informa o diagnóstico e conserva a projeção de segurança. A remoção da camada nativa de vídeo reduz a dependência do caminho de apresentação do driver, mas não comprova a correção da falha em uma GPU que não foi testada.
 
 ## Cores, fontes e negrito
 
@@ -209,7 +235,7 @@ A primeira restauração de pacotes de desenvolvimento usa NuGet. Isso não é n
 Para executar apenas as verificações visuais de tipografia:
 
 ```powershell
-dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -f net10.0 -- --output test-evidence/typography-1.7.0-net10.0
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -f net10.0 -- --output test-evidence/typography-1.8.0-net10.0
 # Para a edição legado, repita com -f net6.0 e outra pasta de saída.
 ```
 

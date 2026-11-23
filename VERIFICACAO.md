@@ -1,4 +1,47 @@
-# Verificação — Worship Studio 1.7.0
+# Verificação — Worship Studio 1.8.0
+
+## Resultado 1.8 — fundos e reprodução compatível
+
+Data: 23/11/2026, America/Sao_Paulo. **842 verificações automáticas aprovadas, zero falhas finais**, mais **18 cenários nativos suplementares**. Os ensaios executaram no Windows 11 disponível; o equipamento em que o usuário relatou a falha não foi acessado.
+
+| Suíte | .NET 10 | .NET 6.0.36 | Evidência no ZIP completo |
+| --- | ---: | ---: | --- |
+| Núcleo e serviços | 211 | 211 | `test-evidence/core-1.8.0-<framework>/verification.trx` |
+| Tipografia, letras e fundos animados | 130 | 130 | `test-evidence/typography-1.8.0-<framework>` |
+| Interface real Avalonia Headless/Skia | 38 | 38 | `test-evidence/ui-headless-1.8.0-<framework>/results.json` |
+| Cliente Java/HTTP real | 26 | 26 | `test-evidence/file-transfer-1.8/<framework>/android-upload-results.json` |
+
+Completam o total **32 verificações Java** do APK. O cálculo é `2 × (211 + 130 + 38 + 26) + 32 = 842`. Os testes seletivos de decodificação e os relatórios adicionais dos hosts não são somados novamente.
+
+### Caminhos corrigidos
+
+O usuário esclareceu que a falha ocorre nos efeitos internos atrás das letras, em Windows 10. Não houve acesso a esse computador. Para esse caminho, a atualização normaliza os nomes dos efeitos nas cenas, recupera modos desconhecidos com Aurora animada e permite selecionar renderização por software para contornar incompatibilidades de driver. A velocidade zero continua sendo uma pausa intencional, agora indicada no painel. As alterações de reprodução de vídeo abaixo são uma melhoria adicional; não demonstram a causa da falha dos efeitos internos.
+
+O código anterior escondia o renderizador antes de receber o primeiro quadro do vídeo, usava decodificação por hardware do LibVLC e dependia de uma janela nativa de vídeo com outra janela transparente para as letras. Esses caminhos poderiam falhar conforme o driver ou a composição da saída; não se confirmou qual deles ocorreu na outra máquina. A superfície agora recebe quadros BGRA completos de um FFmpeg local em processo isolado, com decodificação por CPU. Vídeo, efeitos e letras são compostos no mesmo Grid/Avalonia, sem HWND de vídeo nem overlay transparente separado. O primeiro quadro substitui o fundo de segurança somente quando está pronto.
+
+Foram verificadas leitura fragmentada/truncada, limite de tempo mesmo com stream que ignora cancelamento, bytes BGRA de vídeo azul, repetição além de duas durações, troca de arquivo, cancelamento/encerramento do processo, arquivo inválido e recuperação. Há no máximo uma tentativa econômica após falha em Auto; o econômico não cria uma sequência infinita de tentativas. O slot do quadro antigo é esvaziado ao falhar/recuperar, para não reapresentar um quadro obsoleto. Filas e buffers são limitados. Esses **14 testes novos por runtime** já fazem parte dos 211 de núcleo, com o FFmpeg correspondente selecionado por `WORSHIP_FFMPEG` no build.
+
+Os outros **15 casos novos** de núcleo cobrem normalização dos nomes antigos/desconhecidos, letras preservadas, mídia gerenciada de uma biblioteca copiada resolvida na pasta atual, referência ausente preservada para recuperação, rejeição de caminho relativo fora da biblioteca e preferências de compatibilidade que permanecem locais sem entrar na cena/backup. A escolha explícita de software elimina ANGLE na inicialização, e a edição legado mantém esse caminho.
+
+### Projeção nativa com vídeo
+
+Um probe abre `ProjectionWindow` real e uma janela independente de prévia. Em cada execução, seis cenários conferem vídeo azul com letras brancas nos mesmos pixels, ocultar somente as letras, tela preta integral, restaurar/trocar qualidade/reiniciar, arquivo ausente com Aurora/letras e quadros animados com hashes/pixels diferentes. As três execuções finais passaram: .NET 10 por software, .NET 6 com FFmpeg legado por software e .NET 10 em ANGLE com interoperabilidade GPU/D3D11 efetiva. Não se tratou de fallback de software nessa terceira execução.
+
+São **18 cenários nativos suplementares**, separados das 842 verificações. Não houve decodificador órfão ao final. Fonte do probe, projeto, relatórios, PNGs e hashes dos fontes finais estão em `test-evidence/video-1.8`, especialmente `verification-final.json` e `native-{modern,legacy,gpu-modern}`. As provas usaram um monitor físico no Windows 11 e não equivalem a testar o telão ou a GPU do outro computador.
+
+### Oito novos fundos e operação
+
+Ondas de graça, Raios de luz, Galáxia em movimento, Bokeh suave, Horizonte 3D, Oceano sereno, Fitas de adoração e Prismas de luz usam composições distintas, sem arquivos externos. Há 11 fundos procedurais entre 14 escolhas. Os **22 novos checks visuais por runtime**, incluídos nos 130, conferem pixels que mudam com o tempo, amostragem determinística, pausa em velocidade zero, distinção entre composições, aliases, cores/áudio, escala e prevalência de tela preta. Imagens ausentes, vazias ou corrompidas produzem Aurora animada com as letras e aviso de mídia, sem repetir o aviso a cada quadro. Capturas e relatório estão em `backgrounds-1.8` dentro da suíte visual.
+
+Os três novos checks de interface conferem os oito fundos chegando à prévia/retorno/projeção, letras preservadas, qualidade econômica herdada pelas superfícies, preferências persistidas e pedido de reinício gráfico sem fechar o operador automaticamente. A regressão HTTP usa fundo Solid; seus 21 fingerprints abrangem os fontes atuais, mas não representam cobertura de vídeo por essa prova.
+
+### Limites e distribuição
+
+Os dois upgrades isolados **1.7 → 1.8** passaram: edição atual com CLR próprio 10 → 10 e legado com CLR 10 → 6.0.36. As quatro aberturas alcançaram a janela principal correta e respondendo; hashes dos payloads conferidos, sem binários inesperados. Biblioteca, preferências, recebido e recibo mantiveram seus hashes após atualizar e após desinstalar as identidades de QA. Ambas as desinstalações retornaram zero. A instalação e os atalhos do operador permaneceram inalterados. A compressão foi desativada somente no ISS de QA; o instalador público mantém a compressão normal. Evidências e fontes: `test-evidence/installer-1.8`. Esses ensaios complementam as 842 verificações.
+
+A prévia/projeção de vídeo usa 1280×720/30 em Auto ou 854×480/24 no econômico; letras e fundos procedurais continuam na resolução da superfície. A edição legado usa o econômico. A exportação MP4 continua compondo diretamente o vídeo original com os quadros das letras na resolução escolhida, sem herdar esse limite da reprodução ao vivo. A preferência gráfica por software exige reinício confirmado; vídeos e renderização da interface são escolhas distintas.
+
+O APK 1.8 mantém Java e DEX da 1.7 e o mesmo certificado. LibVLC continua incluído no pacote com suas licenças, embora não seja usado na superfície de reprodução atual. As provas não validam outra GPU física, rede Wi-Fi/telão da igreja, Android físico ou execução em Windows 7/8/10. Permanecem os requisitos x64, Windows 7 SP1 com KB3063858/equivalente e os limites históricos de Holyrics, áudio e duas telas físicas. Os resultados seguintes são históricos da 1.7 e anteriores.
 
 ## Resultado 1.7 — interface, menus e abertura
 

@@ -15,6 +15,8 @@ public sealed class StudioPreferences
 
     public StudioTheme Theme { get; set; } = StudioTheme.Dark;
     public bool AutoCheckUpdates { get; set; } = true;
+    public bool ForceSoftwareRendering { get; set; }
+    public bool CompatibleVideoPlayback { get; set; }
 
     public static string DefaultDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WorshipStudio");

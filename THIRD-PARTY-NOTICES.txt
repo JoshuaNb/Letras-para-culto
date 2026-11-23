@@ -1,4 +1,4 @@
-Worship Studio 1.7.0 - componentes de terceiros
+Worship Studio 1.8.0 - componentes de terceiros
 
 O código do Worship Studio é disponibilizado sob a licença MIT (LICENSE.txt).
 As dependências mantêm suas próprias licenças. O uso não requer assinatura,
@@ -26,3 +26,8 @@ foi compilado a partir das fontes não modificadas, com configuração própria
 e sem assembly ou bibliotecas externas opcionais. As bibliotecas nativas
 continuam substituíveis em suas pastas; o aplicativo não contém bloqueio de
 substituição. O FFmpeg é executado como processo externo.
+
+Na versão 1.8, o FFmpeg também decodifica os vídeos locais de fundo em CPU,
+em processo isolado, para composição junto às letras. LibVLCSharp e LibVLC
+continuam incluídos na distribuição, com suas licenças e fontes correspondentes,
+mas não são usados pelo novo caminho de reprodução de vídeo da projeção.

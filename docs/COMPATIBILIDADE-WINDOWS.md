@@ -1,10 +1,10 @@
-# Compatibilidade com Windows — versão 1.7
+# Compatibilidade com Windows — versão 1.8
 
-O instalador `WorshipStudio-Setup-1.7.0.exe` contém duas publicações completas x64 e escolhe uma conforme o Windows. Não é necessário instalar o SDK nem baixar o runtime durante a instalação.
+O instalador `WorshipStudio-Setup-1.8.0.exe` contém duas publicações completas x64 e escolhe uma conforme o Windows. Não é necessário instalar o SDK nem baixar o runtime durante a instalação.
 
 | Windows x64 | Edição escolhida | Renderização da interface e das letras |
 | --- | --- | --- |
-| Windows 11 e Windows 10 22H2, build 19045 ou posterior | Atual, .NET 10 | GPU por ANGLE, com fallback de software |
+| Windows 11 e Windows 10 22H2, build 19045 ou posterior | Atual, .NET 10 | GPU por ANGLE, com fallback e opção explícita de software |
 | Windows 10 anterior à build 19045 | Legado, .NET 6.0.36 | Skia por software |
 | Windows 8 e 8.1 | Legado, .NET 6.0.36 | Skia por software |
 | Windows 7 SP1 com atualização de carregamento de bibliotecas | Legado, .NET 6.0.36 | Skia por software |
@@ -28,7 +28,22 @@ O pacote legado inclui o runtime .NET 6 completo, com UCRT app-local. Não exige
 
 O espaço de operação, os menus e a janela de abertura da 1.7 estão presentes nas duas edições. O carregamento da biblioteca é local e a consulta de atualização opcional ocorre em paralelo, com espera de rede limitada a seis segundos e botão **Abrir programa agora**. Sem internet, a biblioteca e a projeção continuam disponíveis.
 
-O controle Android e a importação de letras do Holyrics continuam disponíveis nas duas edições. APKs anteriores continuam controlando a projeção. Para enviar arquivos do celular, atualize tanto o PC quanto o APK para 1.6 ou superior. O APK 1.7 acompanha o instalador com o mesmo código de controle e transferência da 1.6.
+O controle Android e a importação de letras do Holyrics continuam disponíveis nas duas edições. APKs anteriores continuam controlando a projeção. Para enviar arquivos do celular, atualize tanto o PC quanto o APK para 1.6 ou superior. O APK 1.8 acompanha o instalador com o mesmo código de controle e transferência da 1.7.
+
+## Vídeo e renderização na versão 1.8
+
+O vídeo de fundo é decodificado em CPU pelo FFmpeg incluído na edição escolhida e composto junto às letras. O caminho de projeção não usa VideoView, overlay nativo do LibVLC nem decodificação de vídeo por hardware. As bibliotecas e licenças LibVLC continuam no pacote por compatibilidade da distribuição. Isso não altera o uso de GPU para a interface/letras na edição atual.
+
+| Preferência de vídeo | Resolução do fundo | Frequência |
+| --- | --- | --- |
+| Automática | 1280×720 | 30 quadros/s |
+| Econômica, padrão da edição legado | 854×480 | 24 quadros/s |
+
+**App → Vídeos em modo econômico** aplica imediatamente; a resolução das letras continua sendo a da projeção. Até o primeiro quadro e após falha definitiva, Aurora e letras permanecem disponíveis. A abertura e os quadros têm prazos limitados; uma falha no modo automático faz uma tentativa em modo econômico. Se já estiver no econômico ou a recuperação também falhar, o programa informa o diagnóstico.
+
+**App → Renderização gráfica por software** permite evitar o caminho GPU da interface/letras; requer reiniciar o aplicativo com confirmação. O argumento `--software-rendering` também força esse modo ao abrir. A edição legado já usa software. Nenhuma dessas opções exige internet ou atualização do Windows.
+
+Os oito fundos novos são procedurais e disponíveis nos dois runtimes. Identificadores antigos são normalizados; modo desconhecido ou imagem inválida mantém Aurora e letras. A falha observada no outro computador não foi reproduzida na GPU daquele equipamento; não se afirma correção em qualquer computador.
 
 ## Validação e limites
 
