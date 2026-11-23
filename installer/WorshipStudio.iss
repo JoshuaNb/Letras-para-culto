@@ -5,7 +5,7 @@
   #define LegacyAppSource "..\app\win-legacy-x64"
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.6.0"
+  #define AppVersion "1.7.0"
 #endif
 #ifndef AppIdentity
   #define AppIdentity "{{7DE7E094-533F-4EB2-A817-CE015CE1A823}"

@@ -1,88 +1,135 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:m="using:WorshipStudio.Models" xmlns:controls="using:WorshipStudio.Controls"
- x:Class="WorshipStudio.MainWindow" Title="Worship Studio — Letras para culto" Width="1560" Height="980" MinWidth="1180" MinHeight="760" WindowStartupLocation="CenterScreen">
- <Grid RowDefinitions="60,40,*,34">
-  <Border Background="{DynamicResource WsHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="18,9">
+ x:Class="WorshipStudio.MainWindow" Classes="studio-shell" Title="Worship Studio — Letras para culto" Width="1560" Height="980" MinWidth="1180" MinHeight="760" WindowStartupLocation="CenterScreen">
+ <Grid RowDefinitions="28,44,*,42,24">
+  <Border Background="{DynamicResource WsHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="8,0">
    <Grid ColumnDefinitions="Auto,*,Auto">
-    <StackPanel Orientation="Horizontal" Spacing="11" VerticalAlignment="Center">
-     <Border Background="{DynamicResource WsAccent}" CornerRadius="7" Width="35" Height="35"><TextBlock Text="W" FontWeight="Bold" FontSize="22" Foreground="{DynamicResource WsAccentText}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-     <StackPanel Spacing="1"><TextBlock Text="WORSHIP STUDIO" FontWeight="SemiBold" FontSize="14" LetterSpacing="1.4"/><TextBlock Text="Letras para culto" Classes="muted" FontSize="10"/></StackPanel>
+    <Menu x:Name="StudioMenu" VerticalAlignment="Center">
+     <MenuItem Header="_Arquivo">
+      <MenuItem x:Name="MenuNewSong" Header="Novo louvor…"/>
+      <MenuItem x:Name="MenuImportSongs" Header="Importar letras…"/>
+      <Separator/>
+      <MenuItem x:Name="MenuBackup" Header="Salvar backup completo…"/>
+      <MenuItem x:Name="MenuRestore" Header="Restaurar backup…"/>
+      <Separator/>
+      <MenuItem x:Name="MenuExportVideo" Header="Exportar vídeo MP4…"/>
+      <Separator/>
+      <MenuItem x:Name="MenuExit" Header="Sair"/>
+     </MenuItem>
+     <MenuItem Header="_Biblioteca">
+      <MenuItem x:Name="MenuEditSong" Header="Editar louvor selecionado…"/>
+      <MenuItem x:Name="MenuDeleteSong" Header="Excluir louvor selecionado…"/>
+      <MenuItem x:Name="MenuAddSetlist" Header="Adicionar ao roteiro"/>
+     </MenuItem>
+     <MenuItem Header="_Projeção">
+      <MenuItem x:Name="MenuOpenProjection" Header="Abrir ou fechar projeção"/>
+      <Separator/>
+      <MenuItem x:Name="MenuPreviousSlide" Header="Estrofe anterior"/>
+      <MenuItem x:Name="MenuNextSlide" Header="Próxima estrofe"/>
+      <Separator/>
+      <MenuItem x:Name="MenuHideLyrics" Header="Ocultar ou mostrar letra"/>
+      <MenuItem x:Name="MenuBlackout" Header="Ativar ou desativar tela preta"/>
+     </MenuItem>
+     <MenuItem Header="_Ferramentas">
+      <MenuItem x:Name="MenuAnimations" Header="Galeria de animações…"/>
+      <MenuItem x:Name="MenuConnections" Header="Conexões e Holyrics"/>
+      <MenuItem x:Name="MenuReceivedFiles" Header="Arquivos recebidos do celular…"/>
+      <Separator/>
+      <MenuItem x:Name="MenuPreferences" Header="Preferências"/>
+     </MenuItem>
+     <MenuItem Header="A_juda">
+      <MenuItem x:Name="MenuHelp" Header="Guia de operação e atalhos"/>
+      <MenuItem x:Name="MenuUpdates" Header="Verificar atualizações…"/>
+     </MenuItem>
+    </Menu>
+    <TextBlock Grid.Column="2" Text="LETRAS PARA CULTO · PROJETO LOCAL" Classes="subtle" FontSize="9" LetterSpacing="1" VerticalAlignment="Center" Margin="12,0"/>
+   </Grid>
+  </Border>
+  <Border Grid.Row="1" Background="{DynamicResource WsSurface}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="12,5">
+   <Grid ColumnDefinitions="240,*,Auto">
+    <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+     <Border Background="{DynamicResource WsAccent}" CornerRadius="3" Width="26" Height="26"><TextBlock Text="W" FontWeight="Bold" FontSize="18" Foreground="{DynamicResource WsAccentText}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+     <TextBlock Text="WORSHIP STUDIO" FontWeight="SemiBold" FontSize="12" LetterSpacing="1.1" VerticalAlignment="Center"/>
     </StackPanel>
-    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-     <TextBlock Text="TEMA" Classes="caption" VerticalAlignment="Center" Margin="0,0,3,0"/>
-     <ComboBox x:Name="ThemeCombo" Width="150" MinHeight="32" AutomationProperties.Name="Tema do programa"/>
-     <Border Width="1" Background="{DynamicResource WsBorder}" Margin="6,3"/>
-     <Button x:Name="UpdateButton" Content="Atualizações" ToolTip.Tip="Verificar e instalar novas versões pelo aplicativo"/>
+    <TextBlock x:Name="UpdateStatus" Grid.Column="1" Text="Operação offline · arquivos locais" Classes="muted" FontSize="10" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,0"/>
+    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+     <TextBlock Text="TEMA" Classes="caption" VerticalAlignment="Center" Margin="0,0,2,0"/>
+     <ComboBox x:Name="ThemeCombo" Width="136" MinHeight="28" AutomationProperties.Name="Tema do programa"/>
+     <Border Width="1" Background="{DynamicResource WsBorder}" Margin="5,2"/>
+     <Button x:Name="UpdateButton" Content="Atualizações" Classes="flat" ToolTip.Tip="Verificar e instalar novas versões pelo aplicativo"/>
      <Button x:Name="ExportButton" Content="Exportar MP4" Classes="primary"/>
-     <Button x:Name="HelpButton" Content="?" Width="34" ToolTip.Tip="Guia de operação e atalhos"/>
+     <Button x:Name="HelpButton" Content="?" Width="30" ToolTip.Tip="Guia de operação e atalhos"/>
     </StackPanel>
    </Grid>
   </Border>
-  <Border Grid.Row="1" Background="{DynamicResource WsSurface}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="12,3">
-   <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
-    <Button x:Name="OperationWorkspaceButton" Content="▦  Operação" Classes="flat" FontWeight="SemiBold"/>
-    <Button x:Name="AnimationsWorkspaceButton" Grid.Column="1" Content="◇  Animações" Classes="flat"/>
-    <Button x:Name="ConnectionsWorkspaceButton" Grid.Column="2" Content="⇄  Conexões" Classes="flat"/>
-    <TextBlock x:Name="UpdateStatus" Grid.Column="4" Text="Operação offline · arquivos locais" Classes="muted" FontSize="10" VerticalAlignment="Center" Margin="12,0"/>
-   </Grid>
-  </Border>
-  <Grid Grid.Row="2" ColumnDefinitions="240,4,*,4,318">
-   <Border Background="{DynamicResource WsPanel}" Padding="12,16,12,12">
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto">
-     <Grid ColumnDefinitions="*,Auto" Margin="3,0,0,13"><TextBlock Text="BIBLIOTECA" Classes="caption"/><TextBlock Grid.Column="1" Text="LOCAL" FontSize="9" Classes="muted"/></Grid>
-     <ComboBox x:Name="LibraryMode" Grid.Row="1" Margin="0,0,0,10" SelectedIndex="0"><ComboBoxItem Content="Todos os louvores"/><ComboBoxItem Content="Roteiro do culto"/></ComboBox>
-     <TextBox x:Name="SearchBox" Grid.Row="2" Watermark="Buscar título ou letra…" Margin="0,0,0,10"/>
-     <ListBox x:Name="LibraryList" Grid.Row="3" SelectionMode="Single">
-      <ListBox.ItemTemplate><DataTemplate DataType="m:Song"><StackPanel Spacing="4" Margin="0,3"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" FontSize="12"/><TextBlock Text="{Binding Artist}" FontSize="10" Classes="muted" TextTrimming="CharacterEllipsis"/></StackPanel></DataTemplate></ListBox.ItemTemplate>
+  <Grid Grid.Row="2" ColumnDefinitions="240,4,*,4,318" RowDefinitions="*,5,252">
+   <Border Grid.RowSpan="3" Background="{DynamicResource WsPanel}">
+    <Grid RowDefinitions="32,Auto,Auto,*,Auto,Auto,Auto">
+     <Border Background="{DynamicResource WsSurface}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="12,8"><Grid ColumnDefinitions="*,Auto"><TextBlock Text="BIBLIOTECA" Classes="caption"/><TextBlock Grid.Column="1" Text="LOCAL" FontSize="9" Classes="subtle"/></Grid></Border>
+     <ComboBox x:Name="LibraryMode" Grid.Row="1" Margin="10,10,10,8" SelectedIndex="0"><ComboBoxItem Content="Todos os louvores"/><ComboBoxItem Content="Roteiro do culto"/></ComboBox>
+     <TextBox x:Name="SearchBox" Grid.Row="2" Watermark="Buscar título ou letra…" Margin="10,0,10,8"/>
+     <ListBox x:Name="LibraryList" Grid.Row="3" SelectionMode="Single" Margin="4,0">
+      <ListBox.ItemTemplate><DataTemplate DataType="m:Song"><Grid ColumnDefinitions="12,*" Margin="0,2"><Border Background="{DynamicResource WsClipAccent}" CornerRadius="1" Margin="0,2,9,2"/><StackPanel Grid.Column="1" Spacing="5"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" FontSize="12"/><TextBlock Text="{Binding Artist}" FontSize="10" Classes="muted" TextTrimming="CharacterEllipsis"/></StackPanel></Grid></DataTemplate></ListBox.ItemTemplate>
      </ListBox>
-     <StackPanel Grid.Row="4" Spacing="7" Margin="0,12,0,0">
-      <TextBlock x:Name="LibraryCount" Classes="muted" FontSize="10" Margin="3,0,0,5"/>
-      <Grid ColumnDefinitions="*,*"><Button x:Name="NewButton" Content="+ Novo" Classes="primary" Margin="0,0,4,0"/><Button x:Name="ImportButton" Grid.Column="1" Content="Importar" Margin="4,0,0,0"/></Grid>
-      <Grid ColumnDefinitions="*,*"><Button x:Name="EditButton" Content="Editar" Margin="0,0,4,0"/><Button x:Name="DeleteButton" Grid.Column="1" Content="Excluir" Margin="4,0,0,0"/></Grid>
+     <StackPanel Grid.Row="4" Spacing="6" Margin="10,10,10,0">
+      <TextBlock x:Name="LibraryCount" Classes="muted" FontSize="10" Margin="2,0,0,4"/>
+      <Grid ColumnDefinitions="*,*"><Button x:Name="NewButton" Content="+ Novo louvor" Classes="primary" Margin="0,0,3,0" FontSize="11"/><Button x:Name="ImportButton" Grid.Column="1" Content="Importar" Margin="3,0,0,0"/></Grid>
+      <Grid ColumnDefinitions="*,*"><Button x:Name="EditButton" Content="Editar" Margin="0,0,3,0"/><Button x:Name="DeleteButton" Grid.Column="1" Content="Excluir" Margin="3,0,0,0"/></Grid>
       <Button x:Name="AddSetButton" Content="+ Adicionar ao roteiro" HorizontalAlignment="Stretch"/>
      </StackPanel>
-     <StackPanel Grid.Row="5" x:Name="SetlistTools" Orientation="Horizontal" Spacing="6" Margin="0,7,0,0" IsVisible="False"><Button x:Name="SetUpButton" Content="↑"/><Button x:Name="SetDownButton" Content="↓"/><Button x:Name="SetRemoveButton" Content="Remover"/></StackPanel>
-     <TextBlock Grid.Row="6" Text="Um clique prepara. Duplo clique projeta." FontSize="10" Classes="muted" TextWrapping="Wrap" Margin="3,14,0,2"/>
+     <StackPanel Grid.Row="5" x:Name="SetlistTools" Orientation="Horizontal" Spacing="5" Margin="10,6,10,0" IsVisible="False"><Button x:Name="SetUpButton" Content="↑"/><Button x:Name="SetDownButton" Content="↓"/><Button x:Name="SetRemoveButton" Content="Remover"/></StackPanel>
+     <TextBlock Grid.Row="6" Text="Um clique prepara. Duplo clique projeta." FontSize="10" Classes="muted" TextWrapping="Wrap" Margin="12,12,10,12"/>
     </Grid>
    </Border>
-   <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="{DynamicResource WsBorder}"/>
-   <Grid Grid.Column="2" RowDefinitions="Auto,1.4*,Auto,Auto,*" Margin="16,15,16,12">
-    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
-     <StackPanel Spacing="3"><TextBlock x:Name="SelectedTitle" Text="Selecione um louvor" FontSize="22" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="SelectedArtist" Classes="muted" FontSize="11"/></StackPanel>
-     <TextBlock Grid.Column="1" Text="16:9 · FULL HD" Classes="caption" VerticalAlignment="Center" Margin="10,0,0,0"/>
-    </Grid>
-    <Grid Grid.Row="1" ColumnDefinitions="*,12,*">
-     <Grid RowDefinitions="Auto,*,Auto">
-      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,9"><TextBlock Text="PRÉVIA" Classes="caption"/><TextBlock Grid.Column="1" Text="PREPARAR" Classes="muted" FontSize="9"/></Grid>
-      <Border Grid.Row="1" BorderBrush="{DynamicResource WsBorder}" BorderThickness="1" CornerRadius="5" Background="Black" ClipToBounds="True"><controls:AspectRatioPanel><ContentControl x:Name="PreviewHost"/></controls:AspectRatioPanel></Border>
-      <TextBlock x:Name="PreviewPosition" Grid.Row="2" Text="Nenhuma estrofe selecionada" Classes="muted" FontSize="10" Margin="0,9,0,0" TextTrimming="CharacterEllipsis"/>
+   <GridSplitter Grid.Column="1" Grid.RowSpan="3" ResizeDirection="Columns" Background="{DynamicResource WsBorder}"/>
+   <Grid Grid.Column="2" RowDefinitions="35,*,38,40" Margin="8,0,8,0">
+    <Border BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="5,4"><Grid ColumnDefinitions="*,Auto"><Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center"><TextBlock x:Name="SelectedTitle" Text="Selecione um louvor" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="SelectedArtist" Grid.Column="1" Classes="muted" FontSize="10" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="170" Margin="8,0,0,0"/></Grid><TextBlock Grid.Column="1" Text="16:9" Classes="subtle" FontSize="10" VerticalAlignment="Center" Margin="8,0,0,0"/></Grid></Border>
+    <Grid Grid.Row="1" ColumnDefinitions="190,8,*" Margin="0,7,0,0">
+     <Border Background="{DynamicResource WsSurface}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="1">
+      <Grid RowDefinitions="28,108,Auto,*">
+       <Border Background="{DynamicResource WsTrackHeader}" Padding="9,7"><TextBlock Text="FONTE · PRÉVIA" Classes="caption" FontSize="9"/></Border>
+       <Border Grid.Row="1" Background="Black" ClipToBounds="True"><controls:AspectRatioPanel><ContentControl x:Name="PreviewHost"/></controls:AspectRatioPanel></Border>
+       <TextBlock x:Name="PreviewPosition" Grid.Row="2" Text="Nenhuma estrofe selecionada" Classes="muted" FontSize="10" Margin="9,9,9,0" TextWrapping="Wrap"/>
+       <StackPanel Grid.Row="3" VerticalAlignment="Bottom" Spacing="7" Margin="9,12,9,10"><TextBlock Text="PREPARAR A PRÓXIMA" Classes="caption" FontSize="9"/><TextBlock Text="Selecione uma estrofe na trilha abaixo. Projetar envia a prévia para a saída ao vivo." Classes="muted" FontSize="10" TextWrapping="Wrap"/></StackPanel>
+      </Grid>
+     </Border>
+     <Grid Grid.Column="2" RowDefinitions="28,*,25">
+      <Border Background="{DynamicResource WsTrackHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="1,1,1,0" Padding="9,7"><Grid ColumnDefinitions="*,Auto"><TextBlock x:Name="LiveLabel" Text="SAÍDA FECHADA" FontSize="10" Foreground="{DynamicResource WsLive}" FontWeight="SemiBold" LetterSpacing="0.8"/><TextBlock Grid.Column="1" Text="PROGRAMA" Classes="subtle" FontSize="9"/></Grid></Border>
+      <Border Grid.Row="1" BorderBrush="{DynamicResource WsBorder}" BorderThickness="1" Background="Black" ClipToBounds="True"><controls:AspectRatioPanel><ContentControl x:Name="LivePreviewHost"/></controls:AspectRatioPanel></Border>
+      <TextBlock x:Name="LiveSummary" Grid.Row="2" Text="Abra a projeção para começar" Classes="muted" FontSize="10" Margin="3,6,0,0" TextTrimming="CharacterEllipsis"/>
      </Grid>
-     <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto">
-      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,9"><TextBlock x:Name="LiveLabel" Text="SAÍDA FECHADA" FontSize="10" Foreground="{DynamicResource WsLive}" FontWeight="SemiBold" LetterSpacing="1"/><TextBlock Grid.Column="1" Text="RETORNO" Classes="muted" FontSize="9"/></Grid>
-      <Border Grid.Row="1" BorderBrush="{DynamicResource WsLive}" BorderThickness="1" CornerRadius="5" Background="Black" ClipToBounds="True"><controls:AspectRatioPanel><ContentControl x:Name="LivePreviewHost"/></controls:AspectRatioPanel></Border>
-      <TextBlock x:Name="LiveSummary" Grid.Row="2" Text="Abra a projeção para começar" Classes="muted" FontSize="10" Margin="0,9,0,0" TextTrimming="CharacterEllipsis"/>
-     </Grid>
     </Grid>
-    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,14,0,15">
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto" Margin="0,4,0,0">
+     <Button x:Name="PrevButton" Content="←" Width="32" Margin="0,0,4,0" ToolTip.Tip="Estrofe anterior · seta esquerda"/>
+     <Button x:Name="NextButton" Grid.Column="1" Content="Próxima →" ToolTip.Tip="Seta direita ou espaço"/>
+     <Button x:Name="ReplayButton" Grid.Column="2" Content="Repetir prévia" Classes="flat" ToolTip.Tip="Recomeçar a animação na prévia" Margin="4,0,0,0" FontSize="10"/>
+     <Button x:Name="HideButton" Grid.Column="4" Content="Ocultar letra" Margin="4,0" ToolTip.Tip="Atalho L" FontSize="11"/>
+     <Button x:Name="BlackButton" Grid.Column="5" Content="Tela preta" Classes="danger" ToolTip.Tip="Atalho B" FontSize="11"/>
+    </Grid>
+    <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,4,0,5">
      <Button x:Name="OpenProjectionButton" Content="Abrir projeção" HorizontalAlignment="Left"/>
-     <Button x:Name="ReplayButton" Grid.Column="1" Content="↻ Testar" Classes="flat" ToolTip.Tip="Recomeçar a animação na prévia" Margin="0,0,7,0"/>
-     <Button x:Name="SendButton" Grid.Column="2" Content="Projetar estrofe  ↗" Classes="primary"/>
-    </Grid>
-    <Border Grid.Row="3" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,1,0,1" Padding="0,10" Margin="0,0,0,13">
-     <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
-      <Button x:Name="PrevButton" Content="←" Width="38" Margin="0,0,6,0" ToolTip.Tip="Estrofe anterior · seta esquerda"/>
-      <Button x:Name="NextButton" Grid.Column="1" Content="Próxima →" ToolTip.Tip="Seta direita ou espaço"/>
-      <Button x:Name="HideButton" Grid.Column="3" Content="Ocultar letra" Margin="6,0" ToolTip.Tip="Atalho L"/>
-      <Button x:Name="BlackButton" Grid.Column="4" Content="Tela preta" Classes="danger" ToolTip.Tip="Atalho B"/>
-     </Grid>
-    </Border>
-    <Grid Grid.Row="4" RowDefinitions="Auto,*">
-     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10"><TextBlock Text="SEQUÊNCIA DE ESTROFES" Classes="caption"/><TextBlock Grid.Column="1" Text="CLIQUE: PRÉVIA  ·  DUPLO CLIQUE: AO VIVO" FontSize="9" Classes="muted"/></Grid>
-     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><WrapPanel x:Name="SlidesPanel" Orientation="Horizontal"/></ScrollViewer>
+     <Button x:Name="SendButton" Grid.Column="1" Content="Projetar estrofe →" Classes="primary"/>
     </Grid>
    </Grid>
-   <GridSplitter Grid.Column="3" ResizeDirection="Columns" Background="{DynamicResource WsBorder}"/>
-   <Border Grid.Column="4" Background="{DynamicResource WsPanel}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="1,0,0,0">
-    <TabControl x:Name="InspectorTabs" Margin="7,5,7,0">
+   <GridSplitter Grid.Column="2" Grid.Row="1" ResizeDirection="Rows" Background="{DynamicResource WsBorder}"/>
+   <Border Grid.Column="2" Grid.Row="2" Background="{DynamicResource WsTimelineBg}">
+    <Grid RowDefinitions="31,*,86">
+     <Border Background="{DynamicResource WsSurface}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="10,8"><Grid ColumnDefinitions="*,Auto"><TextBlock Text="SEQUÊNCIA DO CULTO" Classes="caption"/><TextBlock x:Name="TimelinePosition" Grid.Column="1" Text="PRÉVIA — · AO VIVO —" FontSize="10" Foreground="{DynamicResource WsClipAccent}" FontWeight="SemiBold"/></Grid></Border>
+     <Grid Grid.Row="1" ColumnDefinitions="77,*">
+      <Border Background="{DynamicResource WsTrackHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,1,1" Padding="9,10"><StackPanel Spacing="5"><TextBlock Text="L1" Foreground="{DynamicResource WsClipAccent}" FontWeight="SemiBold" FontSize="15"/><TextBlock Text="LETRAS" Classes="caption" FontSize="8"/><TextBlock Text="Estrofes" Classes="muted" FontSize="9"/></StackPanel></Border>
+      <Border Grid.Column="1" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1"><ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="7,8"><WrapPanel x:Name="SlidesPanel" Orientation="Horizontal"/></ScrollViewer></Border>
+     </Grid>
+     <Grid Grid.Row="2" ColumnDefinitions="77,*">
+      <Border Background="{DynamicResource WsTrackHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,1,0" Padding="9,8"><StackPanel Spacing="3"><TextBlock Text="R1" Foreground="{DynamicResource WsSetlistText}" FontWeight="SemiBold" FontSize="13"/><TextBlock Text="ROTEIRO" Classes="caption" FontSize="8"/></StackPanel></Border>
+      <Grid Grid.Column="1" RowDefinitions="Auto,*"><TextBlock x:Name="SetlistTimelineSummary" Text="Adicione louvores ao roteiro para organizar o culto." Classes="muted" FontSize="9" Margin="9,4,7,0" TextTrimming="CharacterEllipsis"/><ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="7,3,7,5"><StackPanel x:Name="SetlistTimelinePanel" Orientation="Horizontal" Spacing="5"/></ScrollViewer></Grid>
+     </Grid>
+    </Grid>
+   </Border>
+   <GridSplitter Grid.Column="3" Grid.RowSpan="3" ResizeDirection="Columns" Background="{DynamicResource WsBorder}"/>
+   <Border Grid.Column="4" Grid.RowSpan="3" Background="{DynamicResource WsPanel}">
+    <Grid RowDefinitions="32,*">
+     <Border Background="{DynamicResource WsSurface}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,0,0,1" Padding="12,8"><Grid ColumnDefinitions="*,Auto"><TextBlock Text="INSPETOR" Classes="caption"/><TextBlock Grid.Column="1" Text="CENA E SAÍDA" Classes="subtle" FontSize="9"/></Grid></Border>
+     <Grid Grid.Row="1">
+    <TabControl x:Name="InspectorTabs" Margin="5,0,5,0">
      <TabItem Header="Cena">
       <ScrollViewer VerticalScrollBarVisibility="Auto">
        <StackPanel Spacing="10" Margin="8,12,8,18">
@@ -187,9 +234,21 @@
       </StackPanel></ScrollViewer>
      </TabItem>
     </TabControl>
+     </Grid>
+    </Grid>
    </Border>
-
   </Grid>
-  <Border Grid.Row="3" Background="{DynamicResource WsHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,1,0,0" Padding="14,6"><Grid ColumnDefinitions="*,Auto"><TextBlock x:Name="StatusText" Text="Pronto" FontSize="10" Classes="muted" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Text="← → navegar   ·   B tela preta   ·   L letra   ·   F11 projeção" FontSize="10" Classes="muted" Margin="12,0,0,0"/></Grid></Border>
+  <Border Grid.Row="3" Background="{DynamicResource WsHeader}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,1,0,0">
+   <Grid ColumnDefinitions="240,*,318">
+    <TextBlock Text="W / LETRAS PARA CULTO" FontSize="9" FontWeight="SemiBold" LetterSpacing="1.2" VerticalAlignment="Center" Margin="14,0" Classes="muted"/>
+    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+     <Button x:Name="OperationWorkspaceButton" Content="Operação" Classes="workspace active" FontWeight="SemiBold"/>
+     <Button x:Name="AnimationsWorkspaceButton" Content="Animações" Classes="workspace"/>
+     <Button x:Name="ConnectionsWorkspaceButton" Content="Conexões" Classes="workspace"/>
+    </StackPanel>
+    <TextBlock Grid.Column="2" Text="ARQUIVOS LOCAIS · SEM NUVEM" FontSize="9" Classes="subtle" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"/>
+   </Grid>
+  </Border>
+  <Border Grid.Row="4" Background="{DynamicResource WsSurface}" BorderBrush="{DynamicResource WsBorder}" BorderThickness="0,1,0,0" Padding="12,4"><Grid ColumnDefinitions="*,Auto"><TextBlock x:Name="StatusText" Text="Pronto" FontSize="9" Classes="muted" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Text="← → navegar · B tela preta · L letra · F11 projeção" FontSize="9" Classes="muted" Margin="10,0,0,0"/></Grid></Border>
  </Grid>
 </Window>

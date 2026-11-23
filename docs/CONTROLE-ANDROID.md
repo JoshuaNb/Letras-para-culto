@@ -2,7 +2,7 @@
 
 **Letras para culto · Controle** opera a apresentação do Worship Studio na mesma rede local. O aplicativo é nativo Android, em português brasileiro, gratuito e sem conta, anúncios, nuvem ou serviços Google. Requer Android 8.0 ou superior; o APK não depende de uma arquitetura específica de processador.
 
-[Baixar o APK 1.6.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.6.0/LetrasParaCulto-Controle-1.6.0.apk) · [Instalador de PC 1.6.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.6.0/WorshipStudio-Setup-1.6.0.exe).
+[Baixar o APK 1.7.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.7.0/LetrasParaCulto-Controle-1.7.0.apk) · [Instalador de PC 1.7.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.7.0/WorshipStudio-Setup-1.7.0.exe).
 
 O instalador de PC também inclui o arquivo Android. Abra **Conexões → Baixar APK para Android…**, escolha onde salvar e transfira o APK ao celular, por exemplo por cabo. Salvar essa cópia não exige internet; se o arquivo não estiver presente na instalação, o botão abre o download oficial da mesma versão no GitHub.
 
@@ -12,7 +12,7 @@ Para enviar arquivos, atualize o PC e o APK para 1.6 ou superior. Depois de cone
 
 1. Abra o APK baixado no Android e conclua a instalação pela interface do aparelho.
 2. Conecte celular e computador à mesma rede local. O PC pode estar por cabo e o celular por Wi-Fi, desde que consigam comunicar-se nessa rede.
-3. No Worship Studio 1.4.0, abra **Conexões** e clique em **Iniciar controle remoto**.
+3. No Worship Studio 1.7.0, abra **Ferramentas → Conexões e Holyrics** e clique em **Iniciar controle remoto**. Nas versões anteriores, use a aba **Conexões**.
 4. No celular, informe o IPv4 e a porta mostrados no PC, por exemplo `192.168.1.10:8765`. Digite o código de seis dígitos exibido no computador e toque em **Conectar**.
 5. Prepare um louvor no PC e envie uma estrofe à projeção. O aplicativo Android mostra o retorno e os controles da apresentação atual.
 
@@ -56,8 +56,10 @@ Somente o endereço do PC é lembrado. Código e token ficam na memória da sess
 
 As próximas versões são publicadas nas [Releases do GitHub](https://github.com/JoshuaNb/Letras-para-culto/releases). Instale o novo APK sobre a versão anterior usando a interface do Android. O programa de PC tem seu próprio botão **Atualizações** a partir da versão 1.3; isso não instala automaticamente o APK no celular.
 
+O APK 1.7 foi recompilado, assinado e alinhado com a mesma chave de assinatura das versões anteriores. Os fontes Java e o DEX são idênticos aos da 1.6; a versão do pacote acompanha o novo instalador de PC. O APK 1.6 continua compatível com o PC 1.7, incluindo a transferência de arquivos. Os registros de construção estão em `android-remote/verification/build-1.7.0.json`; a compilação e os testes de protocolo não equivalem à execução da Activity em um celular físico.
+
 O código Android e os scripts de construção ficam em `android-remote` no ZIP completo da distribuição de PC. A construção usa JDK 21, Android SDK Platform 36 e Build Tools 36.0.0. As próximas distribuições Android precisam conservar a mesma chave de assinatura para permitir atualização sobre a instalação anterior. Essa chave e suas senhas não acompanham o código público.
 
 Na versão 1.4, o APK foi compilado, assinado e alinhado. Foram executados 32 testes Java do parser de conexão e 17 de HTTP real com o mesmo cliente incluído no APK e a operação do PC no backend Avalonia Headless. Isso valida o protocolo e os comandos, sem executar a Activity ou simular toques Android. O emulador sem hypervisor ficou indisponível; a Activity e o uso em celular físico não foram observados.
 
-[Instruções de compilação e testes](../android-remote/README.md) · [Notas da versão 1.4](releases/v1.4.0.md).
+[Instruções de compilação e testes](../android-remote/README.md) · [Notas da versão 1.7](releases/v1.7.0.md) · [Histórico da versão 1.4](releases/v1.4.0.md).

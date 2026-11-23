@@ -1,4 +1,39 @@
-# Verificação — Worship Studio 1.6.0
+# Verificação — Worship Studio 1.7.0
+
+## Resultado 1.7 — interface, menus e abertura
+
+**734 verificações automáticas aprovadas, zero falhas finais.** As duas edições foram exercitadas no Windows 11 disponível. Os ensaios nativos e do instalador complementam esse número.
+
+| Suíte | .NET 10 | .NET 6.0.36 | Evidência no ZIP completo |
+| --- | ---: | ---: | --- |
+| Núcleo e serviços | 182 | 182 | `test-evidence/core-1.7.0-<framework>/verification.trx` |
+| Tipografia e animações | 108 | 108 | `test-evidence/typography-1.7.0-<framework>` |
+| Interface real em Avalonia Headless/Skia | 35 | 35 | `test-evidence/ui-headless-1.7.0-<framework>/results.json` |
+| Transporte Java/HTTP real | 26 | 26 | `test-evidence/file-transfer-1.7/<framework>/android-upload-results.json` |
+
+Completam o total **32 verificações Java** do APK, registradas em `android-remote/verification/build-1.7.0.json`. Os relatórios dos hosts complementam a integração sem serem somados novamente.
+
+### O que foi exercitado
+
+Os 15 novos casos de núcleo abrangem 11 cenários de inicialização e quatro de contraste das faixas nos temas. A biblioteca é lida em um worker independentemente da consulta de atualização; foram exercitados opt-out sem requisição, erro de rede, nova consulta em cada sessão, biblioteca corrompida e falha na criação da pasta sem sobrescrever dados, cancelamento e timeout mesmo quando o cliente ignora o token. Uma resposta tardia não prevalece sobre o cancelamento. O teto de produção é de seis segundos; os testes usam prazos menores para exercitar os mesmos caminhos.
+
+As sete novas verificações de interface abrem os menus por entrada de ponteiro nos controles reais, usam o roteiro para preparar e reordenar louvores sem alterar a saída ao vivo, operam tela preta/letra pelo menu, carregam uma biblioteca real pela janela de abertura e clicam **Abrir programa agora** durante uma consulta injetada pendente. O painel recebe as letras e o resultado da abertura sem disparar uma segunda consulta. Fechar a abertura cancela e não abre uma janela tardiamente. O tamanho mínimo 1180 × 760 preserva monitores, menus, botões e cartões. Capturas dos quatro temas, da abertura e da operação acompanham os relatórios.
+
+A regressão de rede usa os arquivos Java exatos do APK e os serviços C# de produção com `MainWindow`/`ProjectionWindow` reais em Headless/Skia. Foram observados 26 casos em cada host 1.7.0.0, em Debug, e cinco arquivos concluídos conferidos byte a byte, com SHA256/eventos, durante comandos de projeção. Essa prova usa o construtor direto de `MainWindow`; a abertura é exercitada separadamente pelas suítes acima. Os 13 fingerprints dos fontes correspondem aos arquivos executados. Instruções em `test-evidence/file-transfer-1.7`.
+
+### Ensaio nativo no Windows disponível
+
+Um aplicativo self-contained atual foi iniciado com `--data` apontando para uma pasta sintética isolada e busca automática habilitada. A operação abriu com dois louvores, mostrou **Você está usando a versão mais recente** após a consulta oficial e registrou **Aceleração de GPU ativa**. **Projetar estrofe** abriu a janela independente; **Projeção → Próxima estrofe** avançou a saída e o retorno para 2/3, mantendo a prévia em 1/3. A operação foi encerrada normalmente e os dados sintéticos conferidos. Esse ensaio manual é separado das 734 verificações. Registro e fixtures: `test-evidence/native-1.7`.
+
+### Atualização do instalador
+
+Dois upgrades isolados **1.6 → 1.7** passaram no Windows 11: atual com CLR próprio 10 → 10 e legado com CLR 10 → 6.0.36, este forçado apenas no ISS de QA. As quatro aberturas alcançaram a `MainWindow` correta/respondendo, passando pela nova inicialização. DLLs, FFmpeg e APK corresponderam aos payloads e a limpeza de runtimes não deixou binários inesperados. Biblioteca, preferências, arquivo recebido e recibo preservaram seus hashes na atualização e após desinstalar as identidades de teste; ambas as desinstalações retornaram zero. Instalação e atalhos originais permaneceram inalterados. A compressão foi desativada somente nos instaladores de QA; o pacote público mantém a compressão normal. Fontes e relatórios: `test-evidence/installer-1.7`. Esses ensaios não entram novamente nas 734 verificações.
+
+### APK e limites
+
+O APK 1.7 mantém os quatro fontes Java e `classes.dex` idênticos à 1.6, com novo versionName/versionCode, compilação Java, alinhamento e assinaturas v2/v3 conferidos. A mesma chave de assinatura foi preservada fora do Git e do ZIP.
+
+Os ensaios locais não confirmam Activity/SAF/toques em celular físico, uma rede Wi-Fi específica nem execução em Windows 7/8/10. O ensaio nativo usou um monitor físico; duas telas físicas, captura de áudio e Holyrics no equipamento da igreja continuam com os limites documentados. A operação offline não exige concluir uma consulta de atualização. Os resultados seguintes são históricos da 1.6 e anteriores.
 
 ## Resultado 1.6 — arquivos do celular ao PC
 

@@ -15,15 +15,17 @@ Este é o nome do projeto no GitHub. O aplicativo, o executável e os instalador
 | [1.4.0](docs/releases/v1.4.0.md) | Todos os recursos anteriores, aplicativo de controle Android e seleção de letras do Holyrics | APK nativo, pareamento por código na rede local e download das letras escolhidas da biblioteca instalada do Holyrics |
 | [1.5.0](docs/releases/v1.5.0.md) | Recursos anteriores em edições atual e legado | Instalador universal x64, seleção automática de runtime, renderização por software e FFmpeg compatível com sistemas antigos |
 | [1.6.0](docs/releases/v1.6.0.md) | Recursos anteriores e transferência do celular ao PC | Envio pelo APK/navegador, progresso/cancelamento e caixa de recebidos com uso de mídia, importação de letras e cópias |
+| [1.7.0](docs/releases/v1.7.0.md) | Espaço de operação inspirado em estações de edição e abertura assistida | Menus operacionais, retorno ampliado, faixas de estrofes/roteiro e carregamento local com consulta opcional de atualização em paralelo |
 
-Para uma instalação nova, prefira **1.6.0**. O instalador de PC, o APK Android, o ZIP completo de código-fonte e os hashes ficam na **Release 1.6.0**. Todas as próximas distribuições serão publicadas neste repositório. Consulte o [histórico de mudanças](CHANGELOG.md).
+Para uma instalação nova, prefira **1.7.0**. O instalador de PC, o APK Android, o ZIP completo de código-fonte e os hashes ficam na **Release 1.7.0**. Todas as próximas distribuições serão publicadas neste repositório. Consulte o [histórico de mudanças](CHANGELOG.md).
 
-[Instalador Windows 1.6.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.6.0/WorshipStudio-Setup-1.6.0.exe) · [APK Android 1.6.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.6.0/LetrasParaCulto-Controle-1.6.0.apk) · [Todos os lançamentos](https://github.com/JoshuaNb/Letras-para-culto/releases)
+[Instalador Windows 1.7.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.7.0/WorshipStudio-Setup-1.7.0.exe) · [APK Android 1.7.0](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.7.0/LetrasParaCulto-Controle-1.7.0.apk) · [Todos os lançamentos](https://github.com/JoshuaNb/Letras-para-culto/releases)
 
 ## Recursos de operação
 
 - Interface em português brasileiro; operação sem conta, assinatura ou internet.
-- Espaço de trabalho com biblioteca, prévia da próxima estrofe, retorno da saída ao vivo, estrofes e inspetor; divisórias permitem ajustar os painéis.
+- Espaço de trabalho inspirado na referência DaVinci Resolve, com biblioteca, prévia independente, retorno ao vivo ampliado, faixas de estrofes e roteiro e inspetor; divisórias permitem ajustar os painéis.
+- Menus **Arquivo**, **Biblioteca**, **Projeção**, **Ferramentas** e **Ajuda** acionam as operações reais do aplicativo.
 - Temas **Branco**, **Escuro**, **Cinza** e **Amarelo pastel**, aplicados imediatamente e lembrados ao reabrir.
 - Biblioteca local, busca, roteiro do culto, edição e importação de TXT, JSON e OpenLyrics.
 - Prévia e saída ao vivo independentes; seleção do monitor, navegação, ocultar letra e tela preta.
@@ -46,13 +48,29 @@ Para uma instalação nova, prefira **1.6.0**. O instalador de PC, o APK Android
 
 A instalação é por usuário. A atualização preserva a biblioteca; faça backup antes de restaurar ou excluir dados. Os instaladores mantêm o nome original para permitir a atualização das versões já instaladas.
 
+## Abrir o programa e preparar a operação
+
+A janela de abertura mostra o carregamento dos louvores salvos no computador e a consulta de atualizações. As duas tarefas começam em paralelo; a biblioteca é lida em segundo plano. Cada abertura real relê os dados locais e faz uma nova consulta ao GitHub quando a busca automática estiver habilitada. Essa opção vem ativada por padrão e respeita a preferência já salva pelo operador.
+
+A espera da consulta de rede tem teto de seis segundos. **Abrir programa agora** pula/cancela essa espera e abre o painel assim que a biblioteca local estiver pronta. Sem internet, o programa abre normalmente. Nenhum instalador é baixado ou executado durante essa abertura. Se o arquivo da biblioteca estiver corrompido, ele é preservado e a gravação permanece bloqueada até a recuperação.
+
+No painel, a biblioteca fica à esquerda, a prévia prepara a próxima estrofe e o monitor maior mostra a saída ao vivo. Os cartões azuis da faixa de estrofes e a faixa âmbar do roteiro representam os textos e louvores cadastrados. Um clique prepara; **Projetar estrofe** envia à saída. Os temas Branco, Escuro, Cinza e Amarelo pastel continuam disponíveis no cabeçalho.
+
+| Menu | Operações |
+| --- | --- |
+| Arquivo | Novo louvor, importar letras, salvar/restaurar backup, exportar MP4 e sair |
+| Biblioteca | Editar/excluir o louvor selecionado e adicionar ao roteiro |
+| Projeção | Abrir/fechar saída, anterior/próxima, ocultar letra e tela preta |
+| Ferramentas | Animações, conexões/Holyrics, arquivos recebidos e preferências |
+| Ajuda | Guia de operação e consulta manual de atualizações |
+
 ## Controlar pelo celular Android
 
-O [APK Letras para culto · Controle](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.6.0/LetrasParaCulto-Controle-1.6.0.apk) é nativo, gratuito e requer **Android 8.0 ou superior**. Funciona na rede local sem conta, nuvem ou internet durante o culto.
+O [APK Letras para culto · Controle](https://github.com/JoshuaNb/Letras-para-culto/releases/download/v1.7.0/LetrasParaCulto-Controle-1.7.0.apk) é nativo, gratuito e requer **Android 8.0 ou superior**. Funciona na rede local sem conta, nuvem ou internet durante o culto. Seu código Java e DEX são os mesmos da 1.6; o pacote 1.7 acompanha a distribuição de PC.
 
 O instalador de PC também inclui o APK. Em **Conexões → Baixar APK para Android…**, salve uma cópia para transferir ao celular; essa cópia pode ser obtida offline. Se o arquivo não estiver incluído na instalação, o botão abre o download oficial da versão no GitHub.
 
-1. Instale a versão 1.6.0 no PC e o APK no Android. Conecte ambos à mesma rede local.
+1. Instale a versão 1.7.0 no PC e o APK no Android. Conecte ambos à mesma rede local.
 2. No PC, abra **Conexões** e inicie o controle remoto. Informe no aplicativo Android o IPv4/porta exibidos e o código de seis dígitos.
 3. Toque em **Conectar**. Use Próxima, Anterior, Tela preta, Ocultar letra, Pulso de efeito ou escolha uma estrofe da apresentação atual.
 
@@ -73,10 +91,10 @@ Esse recurso usa a biblioteca autorizada pelo operador e os endpoints `GetSongs`
 
 ## Atualizar pelo aplicativo
 
-A versão **1.3.0 foi a primeira com atualizador**. Quem está na 1.0, 1.1 ou 1.2 pode instalar a **1.6.0 uma vez** pela Release acima; quem já está na 1.3, 1.4 ou 1.5 pode usar **Atualizações** no aplicativo para chegar à 1.6. A atualização do APK Android é feita pelo arquivo da nova Release.
+A versão **1.3.0 foi a primeira com atualizador**. Quem está na 1.0, 1.1 ou 1.2 pode instalar a **1.7.0 uma vez** pela Release acima; quem já está na 1.3, 1.4, 1.5 ou 1.6 pode usar **Atualizações** no aplicativo para chegar à 1.7. A atualização do APK Android é feita pelo arquivo da nova Release.
 
-- Com a busca automática ativada, o aplicativo consulta a última Release estável ao abrir e a cada seis horas enquanto permanece aberto. A consulta ocorre em segundo plano e aceita apenas versão superior à instalada.
-- Abra **Atualizações** no cabeçalho para consultar a versão disponível, ler as novidades e baixar o instalador. O download mostra progresso e pode ser cancelado.
+- Com a busca automática ativada, o aplicativo faz uma nova consulta à última Release estável em cada abertura e a cada seis horas enquanto permanece aberto. A consulta de abertura ocorre junto ao carregamento local, com espera de rede limitada a seis segundos e opção de continuar imediatamente. Aceita apenas versão superior à instalada.
+- Abra **Ajuda → Verificar atualizações…** ou **Atualizações** no cabeçalho para consultar a versão disponível, ler as novidades e baixar o instalador. O download mostra progresso e pode ser cancelado.
 - O instalador só é disponibilizado para execução após a conferência do tamanho e do SHA-256 com o manifesto da Release e, quando presente, o digest informado pelo GitHub.
 - **Instalar atualização** é uma ação explícita. Após a confirmação, o programa salva a biblioteca, abre o instalador e encerra a operação; programe a instalação para depois da projeção.
 - Na aba **App** do inspetor, desative **Buscar atualizações ao abrir** para desligar as consultas automáticas. A verificação manual continua disponível.
@@ -95,8 +113,8 @@ Execute na raiz do código-fonte da versão:
 # Ao usar git clone ou o ZIP automático do GitHub, restaure as ferramentas:
 .\Restaurar-Distribuicao.ps1
 dotnet test tests/WorshipStudio.Tests.csproj -c Release
-dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -f net10.0 -- --output test-evidence/typography-1.6.0-net10.0
-dotnet run --project ui-tests/WorshipStudio.UiTests.csproj -c Release -f net10.0 -- --output test-evidence/ui-headless-1.6.0-net10.0
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -f net10.0 -- --output test-evidence/typography-1.7.0-net10.0
+dotnet run --project ui-tests/WorshipStudio.UiTests.csproj -c Release -f net10.0 -- --output test-evidence/ui-headless-1.7.0-net10.0
 # Repita os comandos run com -f net6.0 para a edição legado.
 .\build.ps1 -SkipInstaller
 # Com Inno Setup disponível, para testar e gerar instalador, ZIP e hashes:
@@ -105,11 +123,13 @@ dotnet run --project ui-tests/WorshipStudio.UiTests.csproj -c Release -f net10.0
 
 A suíte `render-tests` existe a partir da versão 1.1. A suíte [ui-tests](ui-tests/README.md), adicionada na 1.3, carrega o aplicativo de produção com Avalonia Headless e Skia para conferir layout, eventos, temas e operação. O script publica os executáveis independentes do .NET em `app/win-x64` e `app/win-legacy-x64`. `package-release.ps1` usa a versão do projeto C# para gerar instalador universal, ZIP completo e manifesto de hashes correspondentes na pasta acima do projeto. O pacote completo de código-fonte inclui dependências nativas, licenças e arquivos de origem de terceiros.
 
-O APK tem código Java em `android-remote`, incluído no mesmo ZIP completo. Sua construção usa JDK 21, Android SDK Platform 36 e Build Tools 36.0.0, com `javac`, `aapt2`, `d8`, `zipalign` e `apksigner`; não requer Gradle ou serviços Google. Instruções e testes estão no [README Android](android-remote/README.md). O keystore e as senhas de assinatura ficam fora do repositório e da distribuição pública. O manifesto `SHA256SUMS-v1.6.0.txt` cobre instalador, ZIP de fontes e APK.
+O APK tem código Java em `android-remote`, incluído no mesmo ZIP completo. Sua construção usa JDK 21, Android SDK Platform 36 e Build Tools 36.0.0, com `javac`, `aapt2`, `d8`, `zipalign` e `apksigner`; não requer Gradle ou serviços Google. Instruções e testes estão no [README Android](android-remote/README.md). O keystore e as senhas de assinatura ficam fora do repositório e da distribuição pública. O manifesto `SHA256SUMS-v1.7.0.txt` cobre instalador, ZIP de fontes e APK.
 
-O Git guarda os fontes e as licenças; os executáveis nativos, os arquivos TAR de terceiros e os registros de teste acompanham o ZIP completo anexado à Release. Para a versão 1.6, prefira seu ZIP completo, que já contém os dois FFmpeg e as fontes correspondentes. `Restaurar-Distribuicao.ps1` restaura somente as ferramentas modernas da distribuição histórica 1.2.0, fixada por SHA-256; depois será necessário compilar o FFmpeg legado pela [receita incluída](tools/ffmpeg-legacy/build.sh). Para compilar tags antigas, use o ZIP completo da respectiva Release. A restauração usa internet somente no ambiente de desenvolvimento.
+O Git guarda os fontes e as licenças; os executáveis nativos, os arquivos TAR de terceiros e os registros de teste acompanham o ZIP completo anexado à Release. Para a versão 1.7, prefira seu ZIP completo, que já contém os dois FFmpeg e as fontes correspondentes. `Restaurar-Distribuicao.ps1` restaura somente as ferramentas modernas da distribuição histórica 1.2.0, fixada por SHA-256; depois será necessário compilar o FFmpeg legado pela [receita incluída](tools/ffmpeg-legacy/build.sh). Para compilar tags antigas, use o ZIP completo da respectiva Release. A restauração usa internet somente no ambiente de desenvolvimento.
 
 ## Validação e limites
+
+Os resultados e as evidências da versão 1.7 estão em [VERIFICACAO.md](VERIFICACAO.md). O histórico abaixo conserva os resultados de cada distribuição anterior.
 
 | Versão | Resultado registrado |
 | --- | --- |
@@ -120,6 +140,7 @@ O Git guarda os fontes e as licenças; os executáveis nativos, os arquivos TAR 
 | 1.4.0 | 130 de núcleo, 108 visuais, 26 de interface principal, sete da janela Holyrics, 32 Java e 17 da integração HTTP real: 320 aprovações, zero falhas |
 | 1.5.0 | 138 de núcleo, 108 visuais e 26 de interface em cada um dos dois runtimes, 32 Java e sete do FFmpeg legado: 583 aprovações, zero falhas |
 | 1.6.0 | 167 de núcleo, 108 visuais, 28 de interface e 26 do cliente Java/HTTP por runtime, mais 32 Java: 690 aprovações, zero falhas |
+| 1.7.0 | 182 de núcleo, 108 visuais, 35 de interface e 26 do cliente Java/HTTP por runtime, mais 32 Java: 734 aprovações, zero falhas |
 
 Os 93 testes de núcleo da 1.3 incluem os 44 anteriores, 36 do atualizador e 13 de preferências/contraste. As 24 verificações de interface incluem operação disponível enquanto a janela de atualização permanece aberta, navegação, reutilização do download na sessão, adiamento da instalação e recusa de arquivo adulterado. Uma integração HTTP real também baixou o instalador 1.2.0 do GitHub, conferiu seus 151.413.199 bytes e SHA-256, sem executá-lo; essa integração não está incluída no total de 225.
 

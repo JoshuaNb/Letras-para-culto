@@ -16,7 +16,16 @@ public partial class App : Application
     }
     public override void OnFrameworkInitializationCompleted()
     {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) desktop.MainWindow = new MainWindow();
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var session = new StartupCoordinator(LibraryStore.DataDirectoryOverride).Start(Preferences.AutoCheckUpdates);
+            desktop.MainWindow = new StartupWindow(session, (library, update) =>
+            {
+                var main = new MainWindow(library, update);
+                desktop.MainWindow = main;
+                main.Show();
+            });
+        }
         base.OnFrameworkInitializationCompleted();
     }
 }

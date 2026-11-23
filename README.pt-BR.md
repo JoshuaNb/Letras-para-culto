@@ -1,10 +1,10 @@
-# Worship Studio 1.6.0
+# Worship Studio 1.7.0
 
 Aplicativo desktop em C#/Avalonia UI para preparar e projetar letras de louvores. Edição atual .NET 10 e edição legado .NET 6 para Windows 7 SP1, 8, 8.1, 10 e 11 x64. A operação, a biblioteca, a reprodução de mídia e a exportação funcionam sem internet. Não há conta, assinatura, anúncios ou licença paga para operar o aplicativo.
 
 ## Instalação e primeira projeção
 
-1. Execute `WorshipStudio-Setup-1.6.0.exe` no Windows x64. O instalador escolhe a edição adequada e inclui .NET, LibVLC e FFmpeg. A instalação é por usuário e preserva a biblioteca. No Windows 7, instale o SP1 e a KB3063858 ou atualização equivalente antes de instalar o programa.
+1. Execute `WorshipStudio-Setup-1.7.0.exe` no Windows x64. O instalador escolhe a edição adequada e inclui .NET, LibVLC e FFmpeg. A instalação é por usuário e preserva a biblioteca. No Windows 7, instale o SP1 e a KB3063858 ou atualização equivalente antes de instalar o programa.
 2. Para dois monitores, escolha **Estender estes vídeos** nas configurações de vídeo do Windows. Ligue o projetor antes de iniciar.
 3. Abra Worship Studio. Na aba **Cena**, escolha o monitor de saída.
 4. Clique **Abrir projeção**. A janela de operação permanece independente da projeção. A janela de saída pode funcionar no mesmo monitor quando não há segunda tela.
@@ -13,7 +13,19 @@ Aplicativo desktop em C#/Avalonia UI para preparar e projetar letras de louvores
 
 O louvor inicial é um texto original curto para conferir a operação. Importe ou cadastre a biblioteca da igreja.
 
-## Novidades da versão 1.6
+## Novidades da versão 1.7
+
+O espaço de operação foi reorganizado a partir da referência DaVinci Resolve: superfícies em carvão, biblioteca à esquerda, retorno ao vivo maior, prévia independente e inspetor à direita. A faixa azul mostra as estrofes reais e a faixa âmbar representa o roteiro do culto. A seleção continua preparando a prévia; **Projetar estrofe** envia ao vivo.
+
+Os menus **Arquivo**, **Biblioteca**, **Projeção**, **Ferramentas** e **Ajuda** abrem as operações do programa. Use Arquivo para importar/exportar e trabalhar com backups, Biblioteca para editar louvores, Projeção para operar a saída, Ferramentas para animações/conexões/recebidos e Ajuda para o guia e as atualizações. Os quatro temas continuam disponíveis no cabeçalho.
+
+Ao abrir o aplicativo, uma janela carrega as letras da biblioteca local em segundo plano e inicia a consulta opcional de atualizações em paralelo. A preferência padrão habilita a consulta, respeitando a configuração já salva. Cada nova abertura relê a biblioteca e consulta novamente quando habilitado.
+
+A espera da rede tem limite de seis segundos. **Abrir programa agora** pula/cancela essa espera e abre a operação assim que os dados locais estiverem prontos. Falta de internet não impede abrir. Download e instalação continuam dependendo de uma escolha no aplicativo. Se a biblioteca estiver corrompida, o arquivo original é preservado e a gravação fica bloqueada até a recuperação.
+
+O APK 1.7 acompanha o instalador com a mesma implementação de controle e transferência da 1.6. Não é necessário substituir o APK 1.6 para continuar usando o PC 1.7.
+
+## Recursos da versão 1.6
 
 No celular conectado, escolha **Enviar arquivos** no APK ou no navegador. Selecione até dez arquivos locais, cada um com até 512 MB. Acompanhe o progresso ou cancele; os comandos de projeção continuam disponíveis.
 
@@ -192,12 +204,13 @@ Requer SDK .NET 10 x64 para desenvolvimento e Inno Setup 6 para reconstruir o in
 .\build.ps1 -SkipInstaller
 ```
 
-A primeira restauração de pacotes de desenvolvimento usa NuGet. Isso não é necessário na operação do aplicativo pronto. `build.ps1` executa os testes de operação e as regressões visuais, publica em `app\win-x64` e compila o instalador. Os testes incluem biblioteca, importação, contrato Holyrics, autenticação remota, geração/decodificação de MP4 real e comparação dos pixels de fontes, pesos, cores e animações.
+A primeira restauração de pacotes de desenvolvimento usa NuGet. Isso não é necessário na operação do aplicativo pronto. `build.ps1` executa os testes nos dois runtimes, publica em `app\win-x64` e `app\win-legacy-x64` e compila o instalador universal. Os testes incluem biblioteca, importação, contrato Holyrics, autenticação remota, geração/decodificação de MP4 real e comparação dos pixels de fontes, pesos, cores e animações.
 
 Para executar apenas as verificações visuais de tipografia:
 
 ```powershell
-dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -- --output test-evidence/typography-1.2
+dotnet run --project render-tests/WorshipStudio.RenderTests.csproj -c Release -f net10.0 -- --output test-evidence/typography-1.7.0-net10.0
+# Para a edição legado, repita com -f net6.0 e outra pasta de saída.
 ```
 
 Consulte `VERIFICACAO.md` para resultados observados e limites da validação. A galeria desta atualização usa as quatro capturas estáticas fornecidas; os movimentos são interpretações dos nomes e categorias, sem comparação com um vídeo de referência.

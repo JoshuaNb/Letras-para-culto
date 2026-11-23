@@ -6,18 +6,18 @@ Este documento descreve o procedimento de manutenção e publicação. Não há 
 
 ## Contrato do atualizador
 
-Cada lançamento estável deve ter uma tag `vMAJOR.MINOR.PATCH`, como `v1.6.0`, e os três anexos de PC: instalador, ZIP completo e manifesto de hashes. Quando incluir o controle Android, como na versão 1.6.0, acrescente o APK usando o mesmo número da Release. Nesse caso, publique estes **quatro anexos**:
+Cada lançamento estável deve ter uma tag `vMAJOR.MINOR.PATCH`, como `v1.7.0`, e os três anexos de PC: instalador, ZIP completo e manifesto de hashes. Quando incluir o controle Android, como na versão 1.7.0, acrescente o APK usando o mesmo número da Release. Nesse caso, publique estes **quatro anexos**:
 
 | Arquivo | Conteúdo |
 | --- | --- |
-| `WorshipStudio-Setup-1.6.0.exe` | Instalador universal Windows x64 (7 SP1, 8, 8.1, 10 e 11) |
-| `LetrasParaCulto-Controle-1.6.0.apk` | Controle nativo Android assinado |
-| `WorshipStudio-Codigo-Fonte-1.6.0.zip` | Código-fonte de PC e Android, construção, dependências nativas, licenças, fontes de terceiros e evidências |
-| `SHA256SUMS-v1.6.0.txt` | SHA-256 do instalador, do APK e do ZIP completo |
+| `WorshipStudio-Setup-1.7.0.exe` | Instalador universal Windows x64 (7 SP1, 8, 8.1, 10 e 11) |
+| `LetrasParaCulto-Controle-1.7.0.apk` | Controle nativo Android assinado |
+| `WorshipStudio-Codigo-Fonte-1.7.0.zip` | Código-fonte de PC e Android, construção, dependências nativas, licenças, fontes de terceiros e evidências |
+| `SHA256SUMS-v1.7.0.txt` | SHA-256 do instalador, do APK e do ZIP completo |
 
 O atualizador consulta `https://api.github.com/repos/JoshuaNb/Letras-para-culto/releases/latest`. Rejeita rascunhos, pré-lançamentos, versões iguais/anteriores e arquivos ausentes ou inconsistentes. Os endereços dos anexos devem pertencer à tag e ao repositório oficial. Downloads exigem HTTPS; redirecionamentos ficam restritos aos hosts de arquivos de Release do GitHub.
 
-O manifesto usa uma linha por arquivo, com 64 caracteres hexadecimais, dois espaços e o nome exato do arquivo. O lançamento 1.6.0 contém três linhas de hash: instalador, APK e ZIP. Não inclua o hash do próprio manifesto. O atualizador de PC continua validando seu instalador pelo nome correspondente; a presença do APK não altera esse protocolo. Os dois arquivos automáticos de código-fonte que o GitHub gera para tags não substituem o ZIP completo da distribuição.
+O manifesto usa uma linha por arquivo, com 64 caracteres hexadecimais, dois espaços e o nome exato do arquivo. O lançamento 1.7.0 contém três linhas de hash: instalador, APK e ZIP. Não inclua o hash do próprio manifesto. O atualizador de PC continua validando seu instalador pelo nome correspondente; a presença do APK não altera esse protocolo. Os dois arquivos automáticos de código-fonte que o GitHub gera para tags não substituem o ZIP completo da distribuição.
 
 ## Preparar uma versão
 
@@ -26,8 +26,9 @@ O manifesto usa uma linha por arquivo, com 64 caracteres hexadecimais, dois espa
 3. Em um checkout limpo, restaure as ferramentas nativas modernas com `Restaurar-Distribuicao.ps1`. A origem 1.2.0 fixada por SHA-256 não contém o FFmpeg legado. Para a 1.5 e posteriores, restaure também `tools/ffmpeg-legacy` e as fontes/licenças a partir do ZIP completo da distribuição ou compile-o pela receita fornecida. O build recusa gerar o instalador universal se esse FFmpeg estiver ausente. Ao trocar uma dependência, publique as fontes/licenças correspondentes e atualize sua origem e hash.
 4. Quando incluir Android, use JDK 21, SDK Platform 36 e Build Tools 36.0.0 para executar os testes Java e gerar o APK assinado com `android-remote/build.ps1`. Consulte [Android](../android-remote/README.md). Conserve o keystore usado na versão anterior e mantenha-o, com as senhas, fora do código público. Confira assinatura, alinhamento, nome e versão antes de preparar a distribuição.
 5. Use SDK .NET 10 x64, runtime .NET 6.0.36 para executar a suíte legada e Inno Setup 6. Execute `package-release.ps1`: ele chama testes de núcleo, visuais e de interface em `net10.0` e `net6.0`, publica os dois aplicativos self-contained, compila o instalador universal, gera o ZIP completo e calcula o manifesto SHA-256. Os relatórios ficam separados por versão e framework em `test-evidence`. A variável de processo `WORSHIP_FFMPEG` seleciona o codificador correspondente durante cada suíte e é restaurada ao terminar. Quando o APK fizer parte da versão, inclua-o entre os pacotes e hashes. Rode também integrações adicionais aplicáveis às mudanças. Consulte [ui-tests](../ui-tests/README.md) para executar somente a suíte de interface.
-6. Verifique instalação, abertura, preservação de dados e atualização a partir da versão estável anterior em identidade, pasta e grupo de atalhos exclusivos de teste. Confirme que o ZIP contém os fontes Android, ferramentas nativas e licenças necessárias e exclui dados pessoais, credenciais, keystores, `.git`, caches, `bin`, `obj` e a pasta de saída `app`.
-7. Atualize as evidências finais e gere novamente o pacote se algum arquivo tiver mudado. Todos os anexos devem corresponder ao código da versão publicada. Não modifique instalador, APK ou ZIP depois de calcular os hashes.
+6. Para a 1.7, valide os menus operacionais e a independência entre prévia e saída. Confira a abertura com biblioteca salva, consulta automática habilitada/desabilitada, rede indisponível, espera de rede limitada e **Abrir programa agora**. Cada abertura real deve reler a biblioteca e realizar uma nova consulta quando habilitada; biblioteca corrompida deve permanecer preservada e com gravação bloqueada. Execute essas verificações nos dois runtimes e registre os resultados, sem reutilizar uma prova da versão anterior.
+7. Verifique instalação, abertura, preservação de dados e atualização a partir da versão estável anterior em identidade, pasta e grupo de atalhos exclusivos de teste. Confirme que o ZIP contém os fontes Android, ferramentas nativas e licenças necessárias e exclui dados pessoais, credenciais, keystores, `.git`, caches, `bin`, `obj` e a pasta de saída `app`.
+8. Atualize as evidências finais e gere novamente o pacote se algum arquivo tiver mudado. Todos os anexos devem corresponder ao código da versão publicada. Não modifique instalador, APK ou ZIP depois de calcular os hashes.
 
 Execute na raiz do projeto:
 
@@ -38,7 +39,7 @@ Execute na raiz do projeto:
 # .\package-release.ps1 -DotnetPath 'C:\SDK\dotnet.exe' -InnoCompiler 'C:\Inno Setup 6\ISCC.exe'
 ```
 
-Os pacotes são gravados na pasta acima da raiz do projeto. A geração é local; o envio ao GitHub continua sendo uma etapa explícita de publicação. Na versão 1.6.0, confirme os quatro nomes da tabela e as três entradas do manifesto.
+Os pacotes são gravados na pasta acima da raiz do projeto. A geração é local; o envio ao GitHub continua sendo uma etapa explícita de publicação. Na versão 1.7.0, confirme os quatro nomes da tabela e as três entradas do manifesto. O APK 1.7 conserva os fontes Java e o DEX da 1.6, mas tem versão própria no manifesto e deve ser compilado, assinado e conferido como o pacote que será publicado.
 
 ## Instalador universal e compatibilidade
 
@@ -60,7 +61,7 @@ Na versão 1.3.0 foram aprovadas 225 verificações (93 de núcleo, 108 visuais 
 2. Abra **Releases → Draft a new release** no repositório e selecione essa tag. Preencha título e notas a partir de `docs/releases/v<versão>.md`, convertendo os links relativos em links públicos quando necessário.
 3. Anexe instalador, código-fonte completo e manifesto; nas versões com Android, anexe também o APK. Mantenha a Release como rascunho até todos os uploads terminarem.
 4. Confira os nomes, tamanhos e hashes com os arquivos locais. Para uma distribuição estável, desmarque **Pre-release**, marque **Latest** e publique. Isso permite que o atualizador encontre a versão completa.
-5. Confirme que a página e todos os anexos podem ser acessados publicamente — quatro na versão 1.6.0. Consulte `/releases/latest` e verifique se a tag anunciada é a correta.
+5. Confirme que a página e todos os anexos podem ser acessados publicamente — quatro na versão 1.7.0. Consulte `/releases/latest` e verifique se a tag anunciada é a correta.
 6. Em uma versão anterior que já possua atualizador, execute o fluxo real: descobrir a atualização, baixar, validar e instalar. Confira que os louvores, cenas e preferências foram mantidos. Versões até a 1.2 precisam de uma instalação manual inicial de uma versão com atualizador. Teste o APK com o pareamento e os comandos de rede local e distinga emulador de celular físico no relatório; o APK é atualizado pelo arquivo Android da Release, não pelo instalador de PC.
 
 As notas devem indicar claramente qualquer etapa manual de migração. A consulta em segundo plano não dispara a instalação: o operador escolhe baixar e instalar. A instalação encerra a projeção, portanto deve ser programada para depois da apresentação.

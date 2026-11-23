@@ -1,0 +1,42 @@
+{
+  "version": "1.7.0",
+  "package": "br.com.letrasparaculto.controle",
+  "versionCode": 10700,
+  "artifact": "LetrasParaCulto-Controle-1.7.0.apk",
+  "size": 66077,
+  "sha256": "4beab75a0e26dfba36b6beeae9d58a02dd1b9322f52a27fed745c967f8ee3f41",
+  "java": "OpenJDK 21.0.13.1, --release 8",
+  "androidPlatform": 36,
+  "buildTools": "36.0.0",
+  "minimumApi": 26,
+  "targetApi": 36,
+  "connectionParserTests": {
+    "passed": 32,
+    "failed": 0,
+    "suite": "tests/RemoteConnectionTests.java"
+  },
+  "compiledWithoutWarningsOrErrors": true,
+  "apkSignature": {
+    "verified": true,
+    "schemeV2": true,
+    "schemeV3": true,
+    "keyAlgorithm": "RSA",
+    "keyBits": 3072,
+    "certificateSha256": "f8921f8a937ad73c9262604c4ee2c8083530767f694f5420830bfcb00d0c1b04"
+  },
+  "zipalign4And16KVerified": true,
+  "manifestVerifiedByAapt2": true,
+  "permissions": [
+    "android.permission.INTERNET",
+    "android.permission.ACCESS_NETWORK_STATE"
+  ],
+  "packagedLicense": "assets/LICENSE.txt",
+  "releaseSigningKeyOutsideSource": true,
+  "activityLifecycleReview": "Static review only: separate upload executor and client, SAF selection deferred until resumed, session/upload generation invalidates queued work; pause/disconnect cancels request and stream. No physical Android runtime claim.",
+  "runtimeDeviceValidation": "Not asserted by this build report. Record emulator and physical-device results separately.",
+  "controlCodeUnchangedFrom140": false,
+  "controlCodeUnchangedFrom160": true,
+  "dexSha256": "05c5b4568f9f59d1a2ef8b7957e39292b0913fe53b86748a6d0fc82872d51f4f",
+  "dexIdenticalTo160": true,
+  "sourceFilesComparedToTag160": 4
+}

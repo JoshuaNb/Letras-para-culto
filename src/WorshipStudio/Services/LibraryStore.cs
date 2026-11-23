@@ -11,10 +11,10 @@ public sealed class LibraryStore
     public static JsonSerializerOptions JsonOptions { get; } = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
     public string DirectoryPath { get; }
     public string DocumentPath => Path.Combine(DirectoryPath, "library.json");
-    public LibraryStore(string? directory = null)
+    public LibraryStore(string? directory = null, bool ensureDirectory = true)
     {
         DirectoryPath = Path.GetFullPath(directory ?? DataDirectoryOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WorshipStudio"));
-        Directory.CreateDirectory(DirectoryPath);
+        if (ensureDirectory) Directory.CreateDirectory(DirectoryPath);
     }
     public StudioDocument Load()
     {

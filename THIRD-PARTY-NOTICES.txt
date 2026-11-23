@@ -1,4 +1,4 @@
-Worship Studio 1.6.0 - componentes de terceiros
+Worship Studio 1.7.0 - componentes de terceiros
 
 O código do Worship Studio é disponibilizado sob a licença MIT (LICENSE.txt).
 As dependências mantêm suas próprias licenças. O uso não requer assinatura,

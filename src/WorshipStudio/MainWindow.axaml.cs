@@ -20,7 +20,7 @@ namespace WorshipStudio;
 
 public partial class MainWindow : Window
 {
-    private readonly LibraryStore _store = new();
+    private readonly LibraryStore _store = new(ensureDirectory:false);
     private StudioDocument _document = new();
     private readonly StageSurface _preview = new();
     private readonly StageSurface _programPreview = new();
@@ -57,10 +57,18 @@ public partial class MainWindow : Window
     private string? _startupError;
     private string _gpuStatus = "Renderização em verificação";
 
-    public MainWindow()
+    public MainWindow() : this(null) { }
+
+    public MainWindow(StartupLibraryResult? startupLibrary, StartupUpdateResult? startupUpdate = null)
     {
         InitializeComponent();
-        try { _document = _store.Load(); }
+        if(startupLibrary != null)
+        {
+            _store = startupLibrary.Store ?? _store;
+            _document = startupLibrary.Document;
+            _startupError = startupLibrary.Error;
+        }
+        else try { Directory.CreateDirectory(_store.DirectoryPath); _document = _store.Load(); }
         catch (Exception ex)
         {
             _startupError = "Não foi possível carregar a biblioteca: " + ex.Message + "\nO arquivo original foi preservado. Escolha um backup para restaurar ou corrija library.json na pasta de dados. A gravação automática foi suspensa.";
@@ -88,6 +96,8 @@ public partial class MainWindow : Window
         _updateTimer.Start();
         ConfigureControls();
         BindActions();
+        BindWorkspaceMenu();
+        if(startupUpdate != null) ApplyStartupUpdate(startupUpdate);
         _loading = false;
         RefreshLibrary(_document.Songs.FirstOrDefault()?.Id);
         UpdateOutputUi();
@@ -107,7 +117,7 @@ public partial class MainWindow : Window
             catch(Exception ex){_gpuStatus="Backend gráfico automático";AppLog.Write(ex.Message);}
             if (_startupError != null) await Message("Biblioteca preservada", _startupError);
             else Status("Pronto · "+_gpuStatus+" · biblioteca local salva automaticamente");
-            if (App.Preferences.AutoCheckUpdates) _ = CheckForUpdates(false);
+            if (startupLibrary == null && App.Preferences.AutoCheckUpdates) _ = CheckForUpdates(false);
         };
         Screens.Changed += (_,_) => Dispatcher.UIThread.Post(RefreshMonitors);
         Closing += OnClosing;
@@ -306,7 +316,7 @@ public partial class MainWindow : Window
     {
         _selected=song;_slides=LyricParser.Parse(song?.Lyrics);_previewIndex=0;
         C<TextBlock>("SelectedTitle").Text=song?.Title??"Selecione um louvor";C<TextBlock>("SelectedArtist").Text=song?.Artist??"Sua biblioteca fica salva neste computador";
-        BuildSlideCards();RenderFrames();
+        BuildSlideCards();RefreshSetlistTimeline();RenderFrames();
     }
     private void BuildSlideCards()
     {
@@ -315,20 +325,22 @@ public partial class MainWindow : Window
         {
             var index=i;var slide=_slides[i];
             var isLive=_liveSongId==_selected?.Id&&i==_liveIndex;
-            var stack=new StackPanel {Spacing=8};
+            var stack=new StackPanel {Spacing=6};
             var label=new TextBlock{Text=$"{i+1:00}  {slide.Label.ToUpperInvariant()}",FontSize=10,FontWeight=FontWeight.SemiBold};
-            label.Bind(TextBlock.ForegroundProperty,new DynamicResourceExtension(isLive?"WsLive":"WsAccentLabel"));stack.Children.Add(label);
-            stack.Children.Add(new TextBlock{Text=slide.Text,FontSize=12,TextWrapping=TextWrapping.Wrap,MaxLines=4,TextTrimming=TextTrimming.CharacterEllipsis,Height=65});
+            label.Bind(TextBlock.ForegroundProperty,new DynamicResourceExtension(isLive?"WsLive":"WsClipText"));stack.Children.Add(label);
+            var text=new TextBlock{Text=slide.Text,FontSize=11,TextWrapping=TextWrapping.Wrap,MaxLines=3,TextTrimming=TextTrimming.CharacterEllipsis,Height=43};
+            text.Bind(TextBlock.ForegroundProperty,new DynamicResourceExtension("WsClipText"));stack.Children.Add(text);
             if(isLive){var live=new TextBlock{Text="● AO VIVO",FontSize=9};live.Bind(TextBlock.ForegroundProperty,new DynamicResourceExtension("WsLive"));stack.Children.Add(live);}
-            var button=new Button{Content=stack,Width=210,Height=139,Margin=new Thickness(0,0,9,9),Padding=new Thickness(12),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Top,BorderThickness=new Thickness(1)};
-            button.Bind(Button.BackgroundProperty,new DynamicResourceExtension(i==_previewIndex?"WsSelection":"WsSurface"));
-            button.Bind(Button.BorderBrushProperty,new DynamicResourceExtension(i==_previewIndex?"WsAccent":isLive?"WsLive":"WsBorder"));
+            var button=new Button{Name="SlideClip_"+i,Tag=i,Content=stack,Width=184,Height=102,Margin=new Thickness(0,0,7,0),Padding=new Thickness(10,8),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Top,BorderThickness=new Thickness(i==_previewIndex?2:1)};
+            button.Bind(Button.BackgroundProperty,new DynamicResourceExtension("WsClip"));
+            button.Bind(Button.BorderBrushProperty,new DynamicResourceExtension(i==_previewIndex?"WsAccent":isLive?"WsLive":"WsClipAccent"));
             button.Click+=(_,_)=>{_previewIndex=index;BuildSlideCards();RenderFrames();};
             button.DoubleTapped+=(_,_)=>{_previewIndex=index;SendPreview();};
             panel.Children.Add(button);
         }
         C<TextBlock>("PreviewPosition").Text=_slides.Count==0?"Nenhuma estrofe · edite a letra para começar":$"{_previewIndex+1:00} / {_slides.Count:00} · {_slides[Math.Clamp(_previewIndex,0,_slides.Count-1)].Label}";
         C<Button>("SendButton").IsEnabled=_slides.Count>0;
+        UpdateTimelinePosition();
     }
     private void SendPreview()
     {
@@ -383,6 +395,7 @@ public partial class MainWindow : Window
         C<Button>("OpenProjectionButton").Content=_projection==null?"Abrir projeção":"Fechar projeção";
         C<Button>("BlackButton").Content=_blackout?"Restaurar tela":"Tela preta";
         C<Button>("HideButton").Content=_hideLyrics?"Mostrar letra":"Ocultar letra";
+        RefreshSetlistTimeline();
     }
 
     private void EnsureProjection()
@@ -698,6 +711,14 @@ public partial class MainWindow : Window
             C<TextBlock>("UpdateDetails").Text="Não foi possível consultar o GitHub. A operação continua disponível. "+ex.Message;
         }
         finally{_checkingUpdates=false;if(!_closing)C<Button>("CheckUpdatesButton").IsEnabled=true;}
+    }
+
+    private void ApplyStartupUpdate(StartupUpdateResult result)
+    {
+        _availableUpdate = result.Release;
+        C<TextBlock>("UpdateStatus").Text = result.Message;
+        C<TextBlock>("UpdateDetails").Text = result.Message;
+        C<Button>("UpdateButton").Content = result.Release == null ? "Atualizações" : "Atualizar · " + result.Release.Version;
     }
 
     private void ShowUpdateWindow()

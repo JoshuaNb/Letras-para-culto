@@ -2,6 +2,19 @@
 
 O projeto é publicado como **Letras para culto**. O aplicativo e os arquivos de PC mantêm o nome **Worship Studio**, preservando a atualização das instalações existentes.
 
+## 1.7.0 — Espaço de operação e abertura assistida
+
+- Reorganizada a interface desktop a partir da referência DaVinci Resolve: superfícies em carvão, painéis com divisórias, retorno ao vivo em destaque e prévia independente para preparar a próxima estrofe.
+- Adicionados menus **Arquivo**, **Biblioteca**, **Projeção**, **Ferramentas** e **Ajuda**, ligados às operações de biblioteca, backup/restauração, exportação MP4, navegação, tela preta, animações, conexões, recebidos e atualização.
+- Estrofes apresentadas em uma faixa de cartões azuis e roteiro em uma faixa âmbar, vinculados aos louvores reais, à seleção da prévia e ao estado da saída ao vivo.
+- Nova janela de abertura carrega as letras da biblioteca local em segundo plano e inicia a consulta opcional de atualizações em paralelo. A preferência padrão habilita a consulta; uma preferência existente é respeitada.
+- A espera da consulta de rede é limitada a seis segundos. **Abrir programa agora** pula/cancela essa espera e mantém a leitura local necessária. Falta de internet não impede abrir o programa; download e instalação continuam exigindo ação do operador.
+- A biblioteca é relida e uma nova consulta é iniciada a cada abertura real do aplicativo, quando habilitada. Bibliotecas corrompidas permanecem preservadas, com gravação bloqueada até a recuperação, como nas versões anteriores.
+- APK 1.7 recompilado e assinado com a mesma chave. Os fontes Java e o DEX são idênticos à 1.6; somente a versão do pacote foi atualizada para acompanhar o instalador.
+- Mantidos os quatro temas, os dois runtimes Windows x64, Holyrics, transferência de arquivos e os controles de projeção existentes.
+
+[Notas 1.7](docs/releases/v1.7.0.md) · [Guia de operação](README.pt-BR.md) · [Resultados e limites](VERIFICACAO.md).
+
 ## 1.6.0 — Enviar arquivos do celular ao PC
 
 - Transferência local no APK e no navegador, com até dez arquivos por lote, 512 MB por arquivo, progresso e cancelamento, independente dos comandos da projeção.

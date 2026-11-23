@@ -104,6 +104,16 @@ try
     Check("Os quatro temas geram imagens distintas da interface real", () =>
         Require(imageHashes.Count == 4 && imageHashes.Values.Distinct().Count() == 4, "Temas não resultaram em quatro capturas diferentes."));
 
+    Check("Menus reais abrem preferências e conexões sem iniciar serviços", () =>
+    {
+        MenuCommand("MenuPreferences");
+        Require(C<TabControl>("InspectorTabs").SelectedIndex == 2, "O menu não abriu Preferências.");
+        MenuCommand("MenuConnections");
+        Require(C<TabControl>("InspectorTabs").SelectedIndex == 1, "O menu não abriu Conexões.");
+        Require(C<TextBlock>("PairingCodeLabel").Text == "— — — — — —", "Abrir o menu iniciou a rede.");
+        Click(C<Button>("OperationWorkspaceButton"));
+    });
+
     Check("Atalhos de espaço de trabalho abrem Cena e Conexões", () =>
     {
         Click(C<Button>("ConnectionsWorkspaceButton"));
@@ -194,6 +204,38 @@ try
         Require(!ReferenceEquals(projection.Surface, preview) && !ReferenceEquals(projection.Surface, live), "A saída reutilizou uma superfície do operador.");
         Require(projection.Surface.Renderer.Frame.Text == initialText && live.Renderer.Frame.Text == initialText, "Saída e retorno não receberam a letra enviada.");
         Require(!live.Renderer.Frame.Blackout && C<TextBlock>("LiveLabel").Text == "AO VIVO", "O retorno não saiu da tela preta.");
+    });
+
+    Check("Trilha do roteiro prepara outro louvor sem interromper a projeção", () =>
+    {
+        var timeline = C<StackPanel>("SetlistTimelinePanel");
+        Require(timeline.Children.OfType<Button>().Select(b => (Guid)b.Tag!).SequenceEqual(new[] { fixtureSong.Id, secondSong.Id }), "O roteiro não representa a ordem da biblioteca.");
+        Click((Button)timeline.Children[1]);
+        Require(preview.Renderer.Frame.Text.Contains("Outro texto"), "O clipe do roteiro não preparou o louvor.");
+        Require(live.Renderer.Frame.Text == initialText && projection!.Surface.Renderer.Frame.Text == initialText, "Preparar no roteiro alterou o programa ao vivo.");
+        Click((Button)timeline.Children[0]);
+        Require(preview.Renderer.Frame.Text == initialText && C<TextBlock>("TimelinePosition").Text!.Contains("01 / 03"), "O roteiro não recuperou a prévia e sua posição.");
+    });
+
+    Check("Reordenar o roteiro atualiza os clipes e preserva a saída", () =>
+    {
+        var timeline = C<StackPanel>("SetlistTimelinePanel");
+        Click((Button)timeline.Children[1]);Click(C<Button>("SetUpButton"));
+        Require((Guid)((Button)timeline.Children[0]).Tag! == secondSong.Id, "Mover para cima não atualizou a trilha.");
+        Click(C<Button>("SetDownButton"));
+        Require((Guid)((Button)timeline.Children[0]).Tag! == fixtureSong.Id, "Mover para baixo não restaurou a ordem.");
+        Click((Button)timeline.Children[0]);
+        Require(live.Renderer.Frame.Text == initialText, "Reordenar o roteiro alterou a projeção.");
+    });
+
+    Check("Menu de projeção controla tela preta e letra na saída real", () =>
+    {
+        MenuCommand("MenuBlackout");
+        Require(live.Renderer.Frame.Blackout && projection!.Surface.Renderer.Frame.Blackout, "Tela preta do menu não alcançou a saída.");
+        MenuCommand("MenuBlackout");MenuCommand("MenuHideLyrics");
+        Require(!live.Renderer.Frame.Blackout && live.Renderer.Frame.HideLyrics && projection!.Surface.Renderer.Frame.HideLyrics, "Ocultar letra do menu não preservou o fundo.");
+        MenuCommand("MenuHideLyrics");
+        Require(!live.Renderer.Frame.HideLyrics && !preview.Renderer.Frame.HideLyrics, "O menu não restaurou a letra.");
     });
 
     Check("Selecionar outra estrofe prepara a prévia sem alterar a saída", () =>
@@ -307,6 +349,66 @@ try
         Require(!editor.IsVisible && preview.Renderer.Frame.Style == before, "Cancelar alterou a cena ou manteve a galeria aberta.");
     });
 
+    Check("Abertura carrega letras reais e permite dispensar a rede sem uma segunda consulta", () =>
+    {
+        var directory = Path.Combine(isolatedData, "startup-isolated");
+        var store = new LibraryStore(directory);
+        store.Save(new StudioDocument { Songs = [fixtureSong], Setlist = [fixtureSong.Id] });
+        var pending = new TaskCompletionSource<UpdateRelease?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requests = 0;
+        using var session = new StartupCoordinator(directory, checkUpdates: _ => { Interlocked.Increment(ref requests); return pending.Task; }).Start(true);
+        MainWindow? opened = null;
+        StartupUpdateResult? updateResult = null;
+        var startup = new StartupWindow(session, (library, update) =>
+        {
+            updateResult = update;
+            opened = new MainWindow(library, update);opened.Show();
+        });
+        try
+        {
+            startup.Show();Pump();
+            WaitUntil(() => session.Library.IsCompleted && Volatile.Read(ref requests) == 1);
+            WaitUntil(() => startup.FindControl<TextBlock>("StartupLibraryStatus")!.Text!.Contains("1 louvor"));
+            Capture(startup, "startup-library-ready");
+            Click(startup.FindControl<Button>("ContinueStartupButton")!);
+            WaitUntil(() => opened != null && opened.IsVisible && !startup.IsVisible);
+            Require(updateResult?.State == StartupUpdateState.Cancelled, "Dispensar a espera não cancelou a consulta.");
+            Require(opened!.FindControl<TextBlock>("SelectedTitle")!.Text == fixtureSong.Title, "A abertura não entregou a biblioteca local à operação.");
+            Require(Volatile.Read(ref requests) == 1, "A janela de operação consultou novamente na mesma abertura.");
+            Require(!((StageSurface)opened.FindControl<ContentControl>("LivePreviewHost")!.Content!).Renderer.Frame.Text.Any(), "Abertura colocou uma letra ao vivo sem comando.");
+            Capture(opened, "startup-opened-operation");
+        }
+        finally { pending.TrySetResult(null);opened?.Close();startup.Close();Pump(); }
+    });
+
+    Check("Fechar durante a abertura cancela a leitura e impede janela tardia", () =>
+    {
+        using var entered = new ManualResetEventSlim();
+        using var gate = new ManualResetEventSlim();
+        using var session = new StartupCoordinator(loadLibrary: token =>
+        {
+            entered.Set();gate.Wait(token);
+            return new StartupLibraryResult(fixture, null, null);
+        }).Start(false);
+        var callbacks = 0;
+        var startup = new StartupWindow(session, (_, _) => callbacks++);
+        startup.Show();Pump();WaitUntil(() => entered.IsSet);
+        startup.Close();gate.Set();WaitUntil(() => session.Library.IsCompleted);
+        Require(!startup.IsVisible && callbacks == 0, "Uma operação tardia abriu após cancelar a inicialização.");
+    });
+
+    Check("Layout mínimo mantém monitores, menu e clipes acessíveis", () =>
+    {
+        main.Width = 1180;main.Height = 760;Pump();
+        Require(preview.Bounds.Width > 150 && live.Bounds.Width > 150, "Os monitores desapareceram no tamanho mínimo.");
+        Require(C<Menu>("StudioMenu").Bounds.Height > 0 && C<Button>("SendButton").IsEffectivelyVisible, "Menu ou projeção ficaram inacessíveis.");
+        var clip = C<WrapPanel>("SlidesPanel").Children.OfType<Button>().First();
+        Require(clip.Bounds.Height >= 100, "O texto da estrofe foi cortado pela trilha.");
+        Capture(main, "minimum-layout");
+        main.Width = 1560;main.Height = 980;Pump();
+        Capture(main, "operation-final");
+    });
+
     Check("Arquivos recebidos persistem e só entram na biblioteca ou cena por ação explícita", () =>
     {
         var data=Path.Combine(isolatedData,"inbox-operation");
@@ -375,7 +477,7 @@ finally
     var report = new
     {
         suite = "Interface real Avalonia Headless + Skia", application = typeof(App).Assembly.GetName().Version?.ToString(),
-        mode = "isolated, automatic update checks disabled, no native OS UI", passed = results.Count(r => r.Passed),
+        mode = "isolated, official update checks disabled; injected startup/update transport; no native OS UI", passed = results.Count(r => r.Passed),
         failed = results.Count(r => !r.Passed), checks = results, imageHashes
     };
     File.WriteAllText(Path.Combine(output, "results.json"), JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
@@ -408,6 +510,12 @@ void Click(Control button)
     owner.MouseDown(center, MouseButton.Left, RawInputModifiers.None);
     owner.MouseUp(center, MouseButton.Left, RawInputModifiers.None);
     Pump();
+}
+void MenuCommand(string name)
+{
+    var menu = C<Menu>("StudioMenu").Items.OfType<MenuItem>().Single(parent => parent.Items.OfType<MenuItem>().Any(item => item.Name == name));
+    Click(menu);Pump();
+    Click(C<MenuItem>(name));Pump();
 }
 ProjectionWindow FindProjection()
 {

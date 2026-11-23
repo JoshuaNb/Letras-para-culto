@@ -80,6 +80,19 @@ public sealed class StudioPreferencesTests : IDisposable
             Assert.True(Contrast(palette["WsAccentLabel"], palette[background]) >= 4.5, $"{theme} accent label/{background}");
     }
 
+    [Theory]
+    [InlineData(StudioTheme.Light)]
+    [InlineData(StudioTheme.Dark)]
+    [InlineData(StudioTheme.Gray)]
+    [InlineData(StudioTheme.PastelYellow)]
+    public void TimelineClipsKeepLyricsAndSetlistTextReadable(StudioTheme theme)
+    {
+        var palette = StudioThemes.Palette(theme);
+        Assert.True(Contrast(palette["WsClipText"], palette["WsClip"]) >= 4.5, $"{theme} lyric clips");
+        Assert.True(Contrast(palette["WsSetlistText"], palette["WsSetlistClip"]) >= 4.5, $"{theme} setlist clips");
+        Assert.True(Contrast(palette["WsSetlistText"], palette["WsSelection"]) >= 4.5, $"{theme} selected setlist clip");
+    }
+
     private static double Contrast(string first, string second)
     {
         static double Luminance(string hex)

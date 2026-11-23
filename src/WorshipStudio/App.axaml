@@ -1,25 +1,32 @@
 <Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="WorshipStudio.App" RequestedThemeVariant="Dark">
  <Application.Resources>
-  <SolidColorBrush x:Key="WsBackground">#17191D</SolidColorBrush>
-  <SolidColorBrush x:Key="WsSurface">#202328</SolidColorBrush>
-  <SolidColorBrush x:Key="WsPanel">#272A30</SolidColorBrush>
-  <SolidColorBrush x:Key="WsInput">#16181C</SolidColorBrush>
-  <SolidColorBrush x:Key="WsBorder">#393E45</SolidColorBrush>
+  <SolidColorBrush x:Key="WsBackground">#1D1E22</SolidColorBrush>
+  <SolidColorBrush x:Key="WsSurface">#23252A</SolidColorBrush>
+  <SolidColorBrush x:Key="WsPanel">#292B32</SolidColorBrush>
+  <SolidColorBrush x:Key="WsInput">#17181C</SolidColorBrush>
+  <SolidColorBrush x:Key="WsBorder">#40424C</SolidColorBrush>
   <SolidColorBrush x:Key="WsText">#EFF1F4</SolidColorBrush>
   <SolidColorBrush x:Key="WsMuted">#B2B8C2</SolidColorBrush>
   <SolidColorBrush x:Key="WsSubtle">#939DAA</SolidColorBrush>
-  <SolidColorBrush x:Key="WsAccent">#63C9B8</SolidColorBrush>
-  <SolidColorBrush x:Key="WsAccentLabel">#63C9B8</SolidColorBrush>
-  <SolidColorBrush x:Key="WsAccentText">#102723</SolidColorBrush>
-  <SolidColorBrush x:Key="WsSelection">#2B4943</SolidColorBrush>
+  <SolidColorBrush x:Key="WsAccent">#EC7968</SolidColorBrush>
+  <SolidColorBrush x:Key="WsAccentLabel">#FFA18F</SolidColorBrush>
+  <SolidColorBrush x:Key="WsAccentText">#231412</SolidColorBrush>
+  <SolidColorBrush x:Key="WsSelection">#443039</SolidColorBrush>
   <SolidColorBrush x:Key="WsHover">#343A42</SolidColorBrush>
   <SolidColorBrush x:Key="WsDanger">#462A33</SolidColorBrush>
   <SolidColorBrush x:Key="WsDangerText">#FFB4C1</SolidColorBrush>
-  <SolidColorBrush x:Key="WsHeader">#1A1D21</SolidColorBrush>
+  <SolidColorBrush x:Key="WsHeader">#18191D</SolidColorBrush>
   <SolidColorBrush x:Key="WsLive">#FF8298</SolidColorBrush>
   <SolidColorBrush x:Key="WsLiveText">#27191D</SolidColorBrush>
   <SolidColorBrush x:Key="WsSuccess">#A1DEB6</SolidColorBrush>
   <SolidColorBrush x:Key="WsShadow">#30000000</SolidColorBrush>
+  <SolidColorBrush x:Key="WsClip">#344B60</SolidColorBrush>
+  <SolidColorBrush x:Key="WsClipText">#E0EBF5</SolidColorBrush>
+  <SolidColorBrush x:Key="WsClipAccent">#78B2D8</SolidColorBrush>
+  <SolidColorBrush x:Key="WsTrackHeader">#22242A</SolidColorBrush>
+  <SolidColorBrush x:Key="WsTimelineBg">#181A1F</SolidColorBrush>
+  <SolidColorBrush x:Key="WsSetlistClip">#5C5441</SolidColorBrush>
+  <SolidColorBrush x:Key="WsSetlistText">#FFF1CD</SolidColorBrush>
  </Application.Resources>
  <Application.Styles>
   <FluentTheme />
@@ -35,6 +42,10 @@
   <Style Selector="Button.nav"><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Left"/></Style>
   <Style Selector="Button.workspace"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="20,10"/><Setter Property="Foreground" Value="{DynamicResource WsMuted}"/></Style>
   <Style Selector="Button.workspace.active"><Setter Property="Background" Value="{DynamicResource WsSelection}"/><Setter Property="Foreground" Value="{DynamicResource WsAccentLabel}"/></Style>
+  <Style Selector="Window.studio-shell Button"><Setter Property="MinHeight" Value="28"/><Setter Property="CornerRadius" Value="3"/><Setter Property="Padding" Value="10,5"/></Style>
+  <Style Selector="Window.studio-shell Button.workspace"><Setter Property="MinHeight" Value="40"/><Setter Property="Padding" Value="25,8"/><Setter Property="CornerRadius" Value="0"/></Style>
+  <Style Selector="Menu"><Setter Property="Background" Value="{DynamicResource WsHeader}"/><Setter Property="Foreground" Value="{DynamicResource WsText}"/></Style>
+  <Style Selector="MenuItem"><Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="{DynamicResource WsText}"/></Style>
   <Style Selector="TextBox"><Setter Property="CornerRadius" Value="4"/><Setter Property="Background" Value="{DynamicResource WsInput}"/><Setter Property="Foreground" Value="{DynamicResource WsText}"/><Setter Property="BorderBrush" Value="{DynamicResource WsBorder}"/><Setter Property="MinHeight" Value="32"/><Setter Property="SelectionBrush" Value="{DynamicResource WsSelection}"/></Style>
   <Style Selector="TextBox:focus /template/ Border#PART_BorderElement"><Setter Property="BorderBrush" Value="{DynamicResource WsAccent}"/></Style>
   <Style Selector="ComboBox"><Setter Property="CornerRadius" Value="4"/><Setter Property="Background" Value="{DynamicResource WsInput}"/><Setter Property="Foreground" Value="{DynamicResource WsText}"/><Setter Property="BorderBrush" Value="{DynamicResource WsBorder}"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="MinHeight" Value="32"/></Style>
